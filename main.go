@@ -2,10 +2,12 @@ package main
 
 import (
 	"bot/commands"
+	"bot/helix"
 	"bot/models"
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -81,6 +83,21 @@ func main() {
 	db, err := sql.Open("sqlite3", config.DatabasePath)
 	if err != nil {
 		logger.Fatalf("Could not open sqlite database: %s", err)
+	}
+
+	logger.Println("Creating Helix client")
+	helix := helix.Client{
+		ClientID:   config.Identity.ClientID,
+		HelixURL:   "https://api.twitch.tv/helix",
+		HttpClient: &http.Client{},
+		Token:      config.Identity.HelixToken,
+	}
+	valid, err := helix.ValidateToken()
+	if err != nil {
+		logger.Fatalf("Could not validate Helix token: %s", err)
+	}
+	if !valid {
+		logger.Fatalf("Helix token invalid")
 	}
 
 	ircClient := irc.NewClient(

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bot/helix"
 	"database/sql"
 	"log"
 	"time"
@@ -12,6 +13,7 @@ type State struct {
 	Config    Config
 	DB        *sql.DB
 	IRC       *irc.Client
+	Helix     *helix.Client
 	Logger    *log.Logger
 	StartedAt *time.Time
 }
