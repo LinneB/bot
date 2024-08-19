@@ -51,6 +51,10 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 			state.Logger.Printf("No command found for %s", msg.Message)
 			return
 		}
+		if commands.Handler.IsOnCooldown(context.SenderUserID, &command) {
+			return
+		}
+		commands.Handler.SetCooldown(context.SenderUserID, &command)
 		reply, err := command.Run(state, context)
 		if err != nil {
 			state.Logger.Printf("Command execution failed: %s", err)

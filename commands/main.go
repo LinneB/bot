@@ -44,11 +44,11 @@ type handler struct {
 	Commands []command
 	// map of latest command executions:
 	// {
-	//     123: {
-	//         "ping": "some-time"
+	//     "ping": {
+	//         123: "last-execution-time"
 	//     }
 	// }
-	Cooldowns map[int]map[string]time.Time
+	Cooldowns map[string]map[int]time.Time
 }
 
 func (h *handler) GetCommandByAlias(prefix string, alias string) (command command, found bool) {
@@ -67,26 +67,18 @@ func (h *handler) GetCommandByAlias(prefix string, alias string) (command comman
 }
 
 func (h *handler) IsOnCooldown(id int, command *command) bool {
-	_, found := h.Cooldowns[id]
+	lastExecution, found := h.Cooldowns[command.Metadata.Name][id]
 	if !found {
 		return false
 	}
-	cooldown, found := h.Cooldowns[id][command.Metadata.Name]
-	if !found {
-		return false
-	}
-	if cooldown.Add(command.Metadata.Cooldown).After(time.Now()) {
+	if lastExecution.Add(command.Metadata.Cooldown).After(time.Now()) {
 		return true
 	}
 	return false
 }
 
 func (h *handler) SetCooldown(id int, command *command) {
-	_, found := h.Cooldowns[id]
-	if !found {
-		h.Cooldowns[id] = make(map[string]time.Time)
-	}
-	h.Cooldowns[id][command.Metadata.Name] = time.Now()
+	h.Cooldowns[command.Metadata.Name][id] = time.Now()
 }
 
 var Handler *handler
@@ -96,6 +88,9 @@ func init() {
 		Commands: []command{
 			ping,
 		},
-		Cooldowns: make(map[int]map[string]time.Time),
+		Cooldowns: make(map[string]map[int]time.Time),
+	}
+	for _, command := range Handler.Commands {
+		Handler.Cooldowns[command.Metadata.Name] = make(map[int]time.Time)
 	}
 }

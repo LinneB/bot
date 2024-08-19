@@ -14,7 +14,7 @@ var ping = command{
 	Metadata: metadata{
 		Name:        "ping",
 		Description: "Returns uptime and other information.",
-		Cooldown:    1,
+		Cooldown:    1 * time.Second,
 		Aliases:     []string{"ping", "uptime"},
 	},
 }
