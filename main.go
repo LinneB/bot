@@ -3,6 +3,7 @@ package main
 import (
 	"bot/commands"
 	"bot/models"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	irc "github.com/gempir/go-twitch-irc/v4"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func newContext(state *models.State, msg irc.PrivateMessage) (context commands.Context, err error) {
@@ -75,6 +77,12 @@ func main() {
 		logger.Fatalf("Could not read and parse config file: %s", err)
 	}
 
+	logger.Println("Opening sqlite database")
+	db, err := sql.Open("sqlite3", config.DatabasePath)
+	if err != nil {
+		logger.Fatalf("Could not open sqlite database: %s", err)
+	}
+
 	ircClient := irc.NewClient(
 		config.Identity.BotUsername,
 		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
@@ -82,6 +90,7 @@ func main() {
 
 	state := models.State{
 		Config:    config,
+		DB:        db,
 		IRC:       ircClient,
 		Logger:    logger,
 		StartedAt: &startedAt,

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"log"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 type State struct {
 	Config    Config
+	DB        *sql.DB
 	IRC       *irc.Client
 	Logger    *log.Logger
 	StartedAt *time.Time
