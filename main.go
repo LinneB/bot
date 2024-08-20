@@ -57,19 +57,36 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 		if err != nil {
 			state.Logger.Printf("Could not create command context: %s", err)
 		}
+
+		// Interactive command
 		command, found := commands.Handler.GetCommandByAlias(context.Invocation)
-		if !found {
-			state.Logger.Printf("No command found for %s", msg.Message)
+		if found {
+			if commands.Handler.IsOnCooldown(context.SenderUserID, command.Metadata.Name, command.Metadata.Cooldown) {
+				return
+			}
+			commands.Handler.SetCooldown(context.SenderUserID, command.Metadata.Name)
+			reply, err := command.Run(state, context)
+			if err != nil {
+				state.Logger.Printf("Command execution failed: %s", err)
+			}
+			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 			return
 		}
-		if commands.Handler.IsOnCooldown(context.SenderUserID, &command) {
-			return
-		}
-		commands.Handler.SetCooldown(context.SenderUserID, &command)
-		reply, err := command.Run(state, context)
+
+		// Static command
+		var reply string
+		err = state.DB.QueryRow("SELECT reply FROM commands WHERE chatid = $1 AND name = $2", context.ChannelID, context.Invocation).Scan(&reply)
 		if err != nil {
-			state.Logger.Printf("Command execution failed: %s", err)
+			if err == sql.ErrNoRows {
+				return
+			}
+			state.Logger.Printf("Could not query database: %s", err)
+			return
 		}
+		if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
+			return
+		}
+		commands.Handler.SetCooldown(context.SenderUserID, context.Invocation)
 		state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 	}
 }

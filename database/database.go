@@ -42,6 +42,12 @@ CREATE TABLE IF NOT EXISTS subscribers (
     CONSTRAINT fk_subscriptions FOREIGN KEY (subscription_id) REFERENCES subscriptions (subscription_id) ON DELETE CASCADE,
     CONSTRAINT fk_chats FOREIGN KEY (chatid) REFERENCES chats (chatid) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS commands (
+    chatid INTEGER NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    reply VARCHAR(400) NOT NULL,
+    CONSTRAINT fk_chats FOREIGN KEY (chatid) REFERENCES chats (chatid) ON DELETE CASCADE
+);
     `)
 	return err
 }
