@@ -2,8 +2,10 @@ package main
 
 import (
 	"bot/commands"
+	"bot/database"
 	"bot/helix"
 	"bot/models"
+	"bot/utils"
 	"database/sql"
 	"fmt"
 	"log"
@@ -14,6 +16,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/LinneB/twitchwh"
 	irc "github.com/gempir/go-twitch-irc/v4"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -67,6 +70,75 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 	}
 }
 
+func onLive(state *models.State) func(twitchwh.StreamOnline) {
+	return func(event twitchwh.StreamOnline) {
+		streamUserID, err := strconv.Atoi(event.BroadcasterUserID)
+		if err != nil {
+			state.Logger.Printf("UserID \"%s\" is not convertable to int: %s", event.BroadcasterUserID, err)
+			return
+		}
+		// Map of chats and their subscribers
+		state.Logger.Printf("%s went live!", event.BroadcasterUserName)
+		subscribers := make(map[string][]string)
+
+		// Get subscribed chats
+		rows, err := state.DB.Query(`
+SELECT
+  c.chatname,
+  c.chatid
+FROM
+  subscriptions su
+  JOIN chats c ON c.chatid = su.chatid
+WHERE
+  su.subscription_userid = $1;`, streamUserID)
+		if err != nil {
+			state.Logger.Printf("Could not query database: %s", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var chat database.Chat
+			err := rows.Scan(&chat.ChatName, &chat.ChatID)
+			if err != nil {
+				state.Logger.Printf("Could not scan row: %s", err)
+				return
+			}
+			subscribers[chat.ChatName] = []string{}
+		}
+
+		// Get subscribed users
+		rows, err = state.DB.Query(`
+SELECT
+  c.chatname,
+  s.subscriber_username
+FROM
+  subscribers s
+  JOIN chats c ON c.chatid = s.chatid
+  JOIN subscriptions su ON su.subscription_id = s.subscription_id
+WHERE
+  su.subscription_userid = $1;`, streamUserID)
+		for rows.Next() {
+			var (
+				chatName string
+				username string
+			)
+			err := rows.Scan(&chatName, &username)
+			if err != nil {
+				state.Logger.Printf("Could not scan row: %s", err)
+				return
+			}
+			subscribers[chatName] = append(subscribers[chatName], username)
+		}
+
+		liveMessage := fmt.Sprintf("https://twitch.tv/%s just went live!", event.BroadcasterUserLogin)
+		for chat, users := range subscribers {
+			for _, message := range utils.SplitStreamOnlineMessage(liveMessage, users, 450) {
+				state.IRC.Say(chat, message)
+			}
+		}
+	}
+}
+
 func main() {
 	// TODO: Log to both stdout and a log file
 	logger := log.New(os.Stdout, "Bot: ", log.Ltime|log.Lshortfile)
@@ -84,6 +156,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Could not open sqlite database: %s", err)
 	}
+	database.CreateTables(db)
 
 	logger.Println("Creating Helix client")
 	helix := helix.Client{
@@ -100,6 +173,26 @@ func main() {
 		logger.Fatalf("Helix token invalid")
 	}
 
+	logger.Println("Creating twitchwh client")
+	whClient, err := twitchwh.New(twitchwh.ClientConfig{
+		ClientID:      config.Identity.ClientID,
+		ClientSecret:  config.Identity.ClientSecret,
+		WebhookSecret: config.Eventsub.WebhookSecret,
+		WebhookURL:    config.Eventsub.WebhookURL,
+		Debug:         true,
+	})
+	if err != nil {
+		logger.Fatalf("Could not create twitchwh client: %s", err)
+	}
+	http.HandleFunc("/eventsub", whClient.Handler)
+	go func() {
+		logger.Printf("Starting http server on port %d", 8080)
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			logger.Fatalf("Could not start http server: %s", err)
+		}
+	}()
+
 	ircClient := irc.NewClient(
 		config.Identity.BotUsername,
 		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
@@ -111,10 +204,12 @@ func main() {
 		IRC:       ircClient,
 		Logger:    logger,
 		StartedAt: &startedAt,
+		TwitchWH:  whClient,
 	}
 
 	ircClient.OnPrivateMessage(onMessage(&state))
 	ircClient.OnConnect(func() { logger.Println("Connected to chat") })
+	whClient.OnStreamOnline = onLive(&state)
 	ircClient.Join(config.Channel)
 
 	if err := ircClient.Connect(); err != nil {

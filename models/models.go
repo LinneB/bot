@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/LinneB/twitchwh"
 	irc "github.com/gempir/go-twitch-irc/v4"
 )
 
@@ -16,6 +17,7 @@ type State struct {
 	Helix     *helix.Client
 	Logger    *log.Logger
 	StartedAt *time.Time
+	TwitchWH  *twitchwh.Client
 }
 
 type Config struct {
@@ -23,9 +25,13 @@ type Config struct {
 	Channel      string `toml:"channel"`
 	Prefix       string `toml:"prefix"`
 	Identity     struct {
-		BotUsername string `toml:"bot_username"`
-		HelixToken  string `toml:"helix_token"`
-		ClientID    string `toml:"client_id"`
-		// TODO: Client secret (for webhooks)
+		BotUsername  string `toml:"bot_username"`
+		HelixToken   string `toml:"helix_token"`
+		ClientID     string `toml:"client_id"`
+		ClientSecret string `toml:"client_secret"`
+	}
+	Eventsub struct {
+		WebhookURL    string `toml:"webhook_url"`
+		WebhookSecret string `toml:"webhook_secret"`
 	}
 }

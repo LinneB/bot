@@ -22,3 +22,22 @@ func TestPrettyDuration(t *testing.T) {
 		t.Errorf("Expected %s; Got %s", expected, actual)
 	}
 }
+
+func TestSplitStreamOnlineMessage(t *testing.T) {
+	liveMessage := "This streamer is now live!"
+	users := []string{"user1", "user2", "user3", "user4", "user5", "user6", "user7"}
+	expected := []string{
+		"This streamer is now live! @user1 @user2",
+		"@user3 @user4 @user5 @user6 @user7",
+	}
+	actual := SplitStreamOnlineMessage(liveMessage, users, 40)
+
+	if len(actual) != len(expected) {
+		t.Errorf("Expected len(2); Got len(%d)", len(actual))
+	}
+	for i, message := range actual {
+		if message != expected[i] {
+			t.Errorf("Expected %s; Got %s", expected[i], message)
+		}
+	}
+}

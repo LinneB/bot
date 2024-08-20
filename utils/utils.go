@@ -63,3 +63,18 @@ func PrettyDuration(d time.Duration) string {
 	}
 	return ""
 }
+
+func SplitStreamOnlineMessage(message string, users []string, length int) (messages []string) {
+	buf := message
+	for _, user := range users {
+		combinedMessage := fmt.Sprintf(`%s @%s`, buf, user)
+		if len(combinedMessage) > length {
+			messages = append(messages, buf)
+			buf = fmt.Sprintf("@%s", user)
+		} else {
+			buf = combinedMessage
+		}
+	}
+	messages = append(messages, buf)
+	return messages
+}
