@@ -50,6 +50,9 @@ func newContext(state *models.State, msg irc.PrivateMessage) (context commands.C
 
 func onMessage(state *models.State) func(irc.PrivateMessage) {
 	return func(msg irc.PrivateMessage) {
+		if !strings.HasPrefix(msg.Message, state.Config.Prefix) {
+			return
+		}
 		context, err := newContext(state, msg)
 		if err != nil {
 			state.Logger.Printf("Could not create command context: %s", err)
