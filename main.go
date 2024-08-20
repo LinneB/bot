@@ -312,6 +312,7 @@ func main() {
 	state := models.State{
 		Config:    config,
 		DB:        db,
+		Helix:     &helix,
 		IRC:       ircClient,
 		Logger:    logger,
 		StartedAt: &startedAt,

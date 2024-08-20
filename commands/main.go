@@ -97,6 +97,7 @@ func init() {
 	Handler = &handler{
 		Commands: []command{
 			help,
+			live,
 			ping,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
