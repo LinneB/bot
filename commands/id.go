@@ -1,0 +1,31 @@
+package commands
+
+import (
+	"bot/models"
+	"fmt"
+	"time"
+)
+
+var id = command{
+	Run: func(state *models.State, ctx Context) (reply string, err error) {
+		if len(ctx.Parameters) < 1 {
+			return fmt.Sprintf("Your ID is %d", ctx.SenderUserID), nil
+		}
+		id, err := state.Helix.LoginToID(ctx.Parameters[0])
+		if err != nil {
+			return "", fmt.Errorf("Could not get ID: %w", err)
+		}
+		if id != nil {
+			return fmt.Sprintf("ID of %s is %d.", ctx.Parameters[0], *id), nil
+		} else {
+			return fmt.Sprintf("User %s not found.", ctx.Parameters[0]), nil
+		}
+	},
+	Metadata: metadata{
+		Name:        "id",
+		Description: "Gets the Twitch user ID for you or another user.",
+		Cooldown:    1 * time.Second,
+		Aliases:     []string{"id", "userid"},
+		Usage:       "#id [user]",
+	},
+}

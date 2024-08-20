@@ -97,6 +97,7 @@ func init() {
 	Handler = &handler{
 		Commands: []command{
 			help,
+			id,
 			live,
 			ping,
 		},
