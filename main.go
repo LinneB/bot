@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -139,6 +140,54 @@ WHERE
 	}
 }
 
+func loadSubscriptions(s *models.State) error {
+	var databaseIDs []int
+	rows, err := s.DB.Query("SELECT subscription_userid FROM subscriptions GROUP BY subscription_userid")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			return err
+		}
+		databaseIDs = append(databaseIDs, id)
+	}
+
+	var activeIDs []int
+	subscriptions, err := s.TwitchWH.GetSubscriptionsByStatus("enabled")
+	if err != nil {
+		return err
+	}
+	for _, sub := range subscriptions {
+		if sub.Type != "stream.online" {
+			continue
+		}
+		id, err := strconv.Atoi(sub.Condition.BroadcasterUserID)
+		if err != nil {
+			return err
+		}
+		activeIDs = append(activeIDs, id)
+	}
+
+	for _, id := range databaseIDs {
+		if !slices.Contains(activeIDs, id) {
+			go func() {
+				s.Logger.Printf("Creating subscription for %d", id)
+				err := s.TwitchWH.AddSubscription("stream.online", "1", twitchwh.Condition{
+					BroadcasterUserID: fmt.Sprint(id),
+				})
+				if err != nil {
+					s.Logger.Printf("Could not create subscription: %s", err)
+				}
+			}()
+		}
+	}
+	return nil
+}
+
 func main() {
 	// TODO: Log to both stdout and a log file
 	logger := log.New(os.Stdout, "Bot: ", log.Ltime|log.Lshortfile)
@@ -209,8 +258,10 @@ func main() {
 
 	ircClient.OnPrivateMessage(onMessage(&state))
 	ircClient.OnConnect(func() { logger.Println("Connected to chat") })
-	whClient.OnStreamOnline = onLive(&state)
 	ircClient.Join(config.Channel)
+
+	loadSubscriptions(&state)
+	whClient.OnStreamOnline = onLive(&state)
 
 	if err := ircClient.Connect(); err != nil {
 		logger.Fatalf("Twitch chat connection failed: %s", err)
