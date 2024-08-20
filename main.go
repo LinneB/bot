@@ -201,7 +201,7 @@ func main() {
 	}
 
 	logger.Println("Opening sqlite database")
-	db, err := sql.Open("sqlite3", config.DatabasePath)
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", config.DatabasePath))
 	if err != nil {
 		logger.Fatalf("Could not open sqlite database: %s", err)
 	}
