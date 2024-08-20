@@ -23,5 +23,6 @@ var ping = command{
 		Description: "Returns uptime and other information.",
 		Cooldown:    1 * time.Second,
 		Aliases:     []string{"ping", "uptime"},
+		Usage:       "#ping",
 	},
 }

@@ -41,3 +41,18 @@ func TestSplitStreamOnlineMessage(t *testing.T) {
 		}
 	}
 }
+
+func TestCapitalizeFirstCharacter(t *testing.T) {
+	input := "hello!"
+	expected := "Hello!"
+	actual := CapitalizeFirstCharacter(input)
+	if actual != expected {
+		t.Errorf("Expected %s; Got %s", expected, actual)
+	}
+	input = "åäö"
+	expected = "Åäö"
+	actual = CapitalizeFirstCharacter(input)
+	if actual != expected {
+		t.Errorf("Expected %s; Got %s", expected, actual)
+	}
+}

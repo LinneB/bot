@@ -54,7 +54,7 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 		if err != nil {
 			state.Logger.Printf("Could not create command context: %s", err)
 		}
-		command, found := commands.Handler.GetCommandByAlias(state.Config.Prefix, context.Command)
+		command, found := commands.Handler.GetCommandByAlias(context.Invocation)
 		if !found {
 			state.Logger.Printf("No command found for %s", msg.Message)
 			return

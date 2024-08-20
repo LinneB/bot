@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"time"
+	"unicode"
 )
 
 // PrettyDuration returns a pretty version of the highest non-zero time unit
@@ -77,4 +78,10 @@ func SplitStreamOnlineMessage(message string, users []string, length int) (messa
 	}
 	messages = append(messages, buf)
 	return messages
+}
+
+func CapitalizeFirstCharacter(s string) string {
+	r := []rune(s)
+	r[0] = unicode.ToTitle(r[0])
+	return string(r)
 }

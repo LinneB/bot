@@ -3,7 +3,6 @@ package commands
 import (
 	"bot/models"
 	"slices"
-	"strings"
 	"time"
 )
 
@@ -38,6 +37,7 @@ type metadata struct {
 	Description string
 	Cooldown    time.Duration
 	Aliases     []string
+	Usage       string
 }
 
 type handler struct {
@@ -51,15 +51,19 @@ type handler struct {
 	Cooldowns map[string]map[int]time.Time
 }
 
-func (h *handler) GetCommandByAlias(prefix string, alias string) (command command, found bool) {
-	if !strings.HasPrefix(alias, prefix) {
-		return command, false
-	}
-
-	// Strip prefix
-	commandName := strings.TrimPrefix(alias, prefix)
+// Attempts to get a command based on an alias.
+func (h *handler) GetCommandByAlias(alias string) (command command, found bool) {
 	for _, c := range h.Commands {
-		if slices.Contains(c.Metadata.Aliases, commandName) {
+		if slices.Contains(c.Metadata.Aliases, alias) {
+			return c, true
+		}
+	}
+	return command, false
+}
+
+func (h *handler) GetCommandByName(name string) (command command, found bool) {
+	for _, c := range h.Commands {
+		if c.Metadata.Name == name {
 			return c, true
 		}
 	}
@@ -86,6 +90,7 @@ var Handler *handler
 func init() {
 	Handler = &handler{
 		Commands: []command{
+			help,
 			ping,
 		},
 		Cooldowns: make(map[string]map[int]time.Time),
