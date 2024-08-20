@@ -118,6 +118,10 @@ FROM
   JOIN subscriptions su ON su.subscription_id = s.subscription_id
 WHERE
   su.subscription_userid = $1;`, streamUserID)
+		if err != nil {
+			state.Logger.Printf("Could not query database: %s", err)
+			return
+		}
 		for rows.Next() {
 			var (
 				chatName string
@@ -205,7 +209,10 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Could not open sqlite database: %s", err)
 	}
-	database.CreateTables(db)
+	err = database.CreateTables(db)
+	if err != nil {
+		logger.Fatalf("Could not create required SQL tables: %s", err)
+	}
 
 	logger.Println("Creating Helix client")
 	helix := helix.Client{
@@ -294,8 +301,11 @@ func main() {
 	ircClient.OnPrivateMessage(onMessage(&state))
 	ircClient.OnConnect(func() { logger.Println("Connected to chat") })
 
-	loadSubscriptions(&state)
 	whClient.OnStreamOnline = onLive(&state)
+	err = loadSubscriptions(&state)
+	if err != nil {
+		logger.Fatalf("Could not load eventsub subscriptions: %s", err)
+	}
 
 	if err := ircClient.Connect(); err != nil {
 		logger.Fatalf("Twitch chat connection failed: %s", err)
