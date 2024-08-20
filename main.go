@@ -209,10 +209,11 @@ func main() {
 
 	logger.Println("Creating Helix client")
 	helix := helix.Client{
-		ClientID:   config.Identity.ClientID,
-		HelixURL:   "https://api.twitch.tv/helix",
-		HttpClient: &http.Client{},
-		Token:      config.Identity.HelixToken,
+		ClientID:    config.Identity.ClientID,
+		HelixURL:    "https://api.twitch.tv/helix",
+		HttpClient:  &http.Client{},
+		Token:       config.Identity.HelixToken,
+		UserIDCache: make(map[string]int),
 	}
 	valid, err := helix.ValidateToken()
 	if err != nil {
@@ -220,6 +221,45 @@ func main() {
 	}
 	if !valid {
 		logger.Fatalf("Helix token invalid")
+	}
+
+	ircClient := irc.NewClient(
+		config.Identity.BotUsername,
+		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
+	)
+
+	// Get chats from database
+	rows, err := db.Query("SELECT chatname FROM chats GROUP BY chatid")
+	if err != nil {
+		logger.Fatalf("Could not get chats from database: %s", err)
+	}
+	var chats []string
+	for rows.Next() {
+		var chat string
+		err := rows.Scan(&chat)
+		if err != nil {
+			log.Fatalf("Could not scan row: %s", err)
+		}
+		chats = append(chats, chat)
+	}
+	if len(chats) > 0 {
+		logger.Printf("Found %d channels in database. Joining...", len(chats))
+		ircClient.Join(chats...)
+	} else {
+		// Init chat from config
+		logger.Println("No chats found in database, checking config file")
+		if config.InitialChannel == "" {
+			logger.Fatal("No channels found in database or config")
+		}
+		id, err := helix.LoginToID(config.InitialChannel)
+		if err != nil {
+			logger.Fatalf("Could not get ID of user: %s", err)
+		}
+		_, err = db.Exec("INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", config.InitialChannel, id)
+		if err != nil {
+			logger.Fatalf("Could not insert to database: %s", err)
+		}
+		ircClient.Join(config.InitialChannel)
 	}
 
 	logger.Println("Creating twitchwh client")
@@ -242,11 +282,6 @@ func main() {
 		}
 	}()
 
-	ircClient := irc.NewClient(
-		config.Identity.BotUsername,
-		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
-	)
-
 	state := models.State{
 		Config:    config,
 		DB:        db,
@@ -258,7 +293,6 @@ func main() {
 
 	ircClient.OnPrivateMessage(onMessage(&state))
 	ircClient.OnConnect(func() { logger.Println("Connected to chat") })
-	ircClient.Join(config.Channel)
 
 	loadSubscriptions(&state)
 	whClient.OnStreamOnline = onLive(&state)

@@ -1,6 +1,9 @@
 package helix
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // User returned from the /users endpoint
 type User struct {
@@ -37,4 +40,12 @@ type Stream struct {
 	Language     string    `json:"language"`
 	ThumbnailURL string    `json:"thumbnail_url"`
 	IsMature     bool      `json:"is_mature"`
+}
+
+type ErrorStatus struct {
+	StatusCode int
+}
+
+func (e *ErrorStatus) Error() string {
+	return fmt.Sprintf("Requested resource returned unhandled status code: %d", e.StatusCode)
 }

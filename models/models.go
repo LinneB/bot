@@ -21,10 +21,10 @@ type State struct {
 }
 
 type Config struct {
-	DatabasePath string `toml:"database_path"`
-	Channel      string `toml:"channel"`
-	Prefix       string `toml:"prefix"`
-	Identity     struct {
+	DatabasePath   string `toml:"database_path"`
+	InitialChannel string `toml:"initial_channel"`
+	Prefix         string `toml:"prefix"`
+	Identity       struct {
 		BotUsername  string `toml:"bot_username"`
 		HelixToken   string `toml:"helix_token"`
 		ClientID     string `toml:"client_id"`
