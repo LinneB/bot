@@ -3,7 +3,6 @@ package models
 import (
 	"bot/helix"
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/LinneB/twitchwh"
@@ -15,7 +14,6 @@ type State struct {
 	DB        *sql.DB
 	IRC       *irc.Client
 	Helix     *helix.Client
-	Logger    *log.Logger
 	StartedAt *time.Time
 	TwitchWH  *twitchwh.Client
 }

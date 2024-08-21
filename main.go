@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -55,7 +54,7 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 		}
 		context, err := newContext(state, msg)
 		if err != nil {
-			state.Logger.Printf("Could not create command context: %s", err)
+			log.Printf("Could not create command context: %s", err)
 		}
 
 		// Interactive command
@@ -67,7 +66,7 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 			commands.Handler.SetCooldown(context.SenderUserID, command.Metadata.Name)
 			reply, err := command.Run(state, context)
 			if err != nil {
-				state.Logger.Printf("Command execution failed: %s", err)
+				log.Printf("Command execution failed: %s", err)
 			}
 			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 			return
@@ -80,7 +79,7 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 			if err == sql.ErrNoRows {
 				return
 			}
-			state.Logger.Printf("Could not query database: %s", err)
+			log.Printf("Could not query database: %s", err)
 			return
 		}
 		if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
@@ -95,11 +94,11 @@ func onLive(state *models.State) func(twitchwh.StreamOnline) {
 	return func(event twitchwh.StreamOnline) {
 		streamUserID, err := strconv.Atoi(event.BroadcasterUserID)
 		if err != nil {
-			state.Logger.Printf("UserID \"%s\" is not convertable to int: %s", event.BroadcasterUserID, err)
+			log.Printf("UserID \"%s\" is not convertable to int: %s", event.BroadcasterUserID, err)
 			return
 		}
 		// Map of chats and their subscribers
-		state.Logger.Printf("%s went live!", event.BroadcasterUserName)
+		log.Printf("%s went live!", event.BroadcasterUserName)
 		subscribers := make(map[string][]string)
 
 		// Get subscribed chats
@@ -113,7 +112,7 @@ FROM
 WHERE
   su.subscription_userid = $1;`, streamUserID)
 		if err != nil {
-			state.Logger.Printf("Could not query database: %s", err)
+			log.Printf("Could not query database: %s", err)
 			return
 		}
 		defer rows.Close()
@@ -121,7 +120,7 @@ WHERE
 			var chat database.Chat
 			err := rows.Scan(&chat.ChatName, &chat.ChatID)
 			if err != nil {
-				state.Logger.Printf("Could not scan row: %s", err)
+				log.Printf("Could not scan row: %s", err)
 				return
 			}
 			subscribers[chat.ChatName] = []string{}
@@ -139,7 +138,7 @@ FROM
 WHERE
   su.subscription_userid = $1;`, streamUserID)
 		if err != nil {
-			state.Logger.Printf("Could not query database: %s", err)
+			log.Printf("Could not query database: %s", err)
 			return
 		}
 		for rows.Next() {
@@ -149,7 +148,7 @@ WHERE
 			)
 			err := rows.Scan(&chatName, &username)
 			if err != nil {
-				state.Logger.Printf("Could not scan row: %s", err)
+				log.Printf("Could not scan row: %s", err)
 				return
 			}
 			subscribers[chatName] = append(subscribers[chatName], username)
@@ -199,12 +198,12 @@ func loadSubscriptions(s *models.State) error {
 	for _, id := range databaseIDs {
 		if !slices.Contains(activeIDs, id) {
 			go func() {
-				s.Logger.Printf("Creating subscription for %d", id)
+				log.Printf("Creating subscription for %d", id)
 				err := s.TwitchWH.AddSubscription("stream.online", "1", twitchwh.Condition{
 					BroadcasterUserID: fmt.Sprint(id),
 				})
 				if err != nil {
-					s.Logger.Printf("Could not create subscription: %s", err)
+					log.Printf("Could not create subscription: %s", err)
 				}
 			}()
 		}
@@ -214,27 +213,28 @@ func loadSubscriptions(s *models.State) error {
 
 func main() {
 	// TODO: Log to both stdout and a log file
-	logger := log.New(os.Stdout, "Bot: ", log.Ltime|log.Lshortfile)
+	log.SetPrefix("Bot: ")
+	log.SetFlags(log.Ltime | log.Lshortfile)
 	startedAt := time.Now()
 
-	logger.Println("Loading config file")
+	log.Println("Loading config file")
 	var config models.Config
 	_, err := toml.DecodeFile("config.toml", &config)
 	if err != nil {
-		logger.Fatalf("Could not read and parse config file: %s", err)
+		log.Fatalf("Could not read and parse config file: %s", err)
 	}
 
-	logger.Println("Opening sqlite database")
+	log.Println("Opening sqlite database")
 	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", config.DatabasePath))
 	if err != nil {
-		logger.Fatalf("Could not open sqlite database: %s", err)
+		log.Fatalf("Could not open sqlite database: %s", err)
 	}
 	err = database.CreateTables(db)
 	if err != nil {
-		logger.Fatalf("Could not create required SQL tables: %s", err)
+		log.Fatalf("Could not create required SQL tables: %s", err)
 	}
 
-	logger.Println("Creating Helix client")
+	log.Println("Creating Helix client")
 	helix := helix.Client{
 		ClientID:    config.Identity.ClientID,
 		HelixURL:    "https://api.twitch.tv/helix",
@@ -244,10 +244,10 @@ func main() {
 	}
 	valid, err := helix.ValidateToken()
 	if err != nil {
-		logger.Fatalf("Could not validate Helix token: %s", err)
+		log.Fatalf("Could not validate Helix token: %s", err)
 	}
 	if !valid {
-		logger.Fatalf("Helix token invalid")
+		log.Fatalf("Helix token invalid")
 	}
 
 	ircClient := irc.NewClient(
@@ -258,7 +258,7 @@ func main() {
 	// Get chats from database
 	rows, err := db.Query("SELECT chatname FROM chats GROUP BY chatid")
 	if err != nil {
-		logger.Fatalf("Could not get chats from database: %s", err)
+		log.Fatalf("Could not get chats from database: %s", err)
 	}
 	var chats []string
 	for rows.Next() {
@@ -270,26 +270,26 @@ func main() {
 		chats = append(chats, chat)
 	}
 	if len(chats) > 0 {
-		logger.Printf("Found %d channels in database. Joining...", len(chats))
+		log.Printf("Found %d channels in database. Joining...", len(chats))
 		ircClient.Join(chats...)
 	} else {
 		// Init chat from config
-		logger.Println("No chats found in database, checking config file")
+		log.Println("No chats found in database, checking config file")
 		if config.InitialChannel == "" {
-			logger.Fatal("No channels found in database or config")
+			log.Fatal("No channels found in database or config")
 		}
 		id, err := helix.LoginToID(config.InitialChannel)
 		if err != nil {
-			logger.Fatalf("Could not get ID of user: %s", err)
+			log.Fatalf("Could not get ID of user: %s", err)
 		}
 		_, err = db.Exec("INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", config.InitialChannel, id)
 		if err != nil {
-			logger.Fatalf("Could not insert to database: %s", err)
+			log.Fatalf("Could not insert to database: %s", err)
 		}
 		ircClient.Join(config.InitialChannel)
 	}
 
-	logger.Println("Creating twitchwh client")
+	log.Println("Creating twitchwh client")
 	whClient, err := twitchwh.New(twitchwh.ClientConfig{
 		ClientID:      config.Identity.ClientID,
 		ClientSecret:  config.Identity.ClientSecret,
@@ -298,14 +298,14 @@ func main() {
 		Debug:         true,
 	})
 	if err != nil {
-		logger.Fatalf("Could not create twitchwh client: %s", err)
+		log.Fatalf("Could not create twitchwh client: %s", err)
 	}
 	http.HandleFunc("/eventsub", whClient.Handler)
 	go func() {
-		logger.Printf("Starting http server on port %d", 8080)
+		log.Printf("Starting http server on port %d", 8080)
 		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
-			logger.Fatalf("Could not start http server: %s", err)
+			log.Fatalf("Could not start http server: %s", err)
 		}
 	}()
 
@@ -314,21 +314,20 @@ func main() {
 		DB:        db,
 		Helix:     &helix,
 		IRC:       ircClient,
-		Logger:    logger,
 		StartedAt: &startedAt,
 		TwitchWH:  whClient,
 	}
 
 	ircClient.OnPrivateMessage(onMessage(&state))
-	ircClient.OnConnect(func() { logger.Println("Connected to chat") })
+	ircClient.OnConnect(func() { log.Println("Connected to chat") })
 
 	whClient.OnStreamOnline = onLive(&state)
 	err = loadSubscriptions(&state)
 	if err != nil {
-		logger.Fatalf("Could not load eventsub subscriptions: %s", err)
+		log.Fatalf("Could not load eventsub subscriptions: %s", err)
 	}
 
 	if err := ircClient.Connect(); err != nil {
-		logger.Fatalf("Twitch chat connection failed: %s", err)
+		log.Fatalf("Twitch chat connection failed: %s", err)
 	}
 }
