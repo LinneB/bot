@@ -1,0 +1,90 @@
+body {
+    display: flex;
+    justify-content: center;
+    background-color: #252525;
+    color: #eee;
+    font-family: sans-serif;
+    font-size: 110%;
+}
+
+body a {
+    color: #7af;
+}
+
+body p, h1, h2, h3 {
+    margin: 0;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#main {
+    max-width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+#main div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#links a {
+    padding: 5px;
+}
+
+#commands table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+    margin-bottom: 20px;
+}
+
+#commands td {
+    background-color: #151515;
+}
+
+#commands th,
+td {
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: center;
+}
+
+#commands p {
+    text-align: left;
+}
+
+#cat {
+    align-self: center;
+    width: min-content;
+}
+
+#command {
+    max-width: 50%;
+}
+
+#usage {
+    display: flex;
+}
+
+#usage p {
+    margin: 0;
+    margin-left: 5px;
+    background-color: #151515;
+}
+
+.example {
+    border: 1px solid #eee;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #151515;
+}
+
+.example-command {
+    color: #b0b4fc;
+}
+
+.example-response {
+    color: #5f9ea0;
+}

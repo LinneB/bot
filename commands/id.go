@@ -27,5 +27,17 @@ var id = command{
 		Cooldown:    1 * time.Second,
 		Aliases:     []string{"id", "userid"},
 		Usage:       "#id [user]",
+		Examples: []example{
+			{
+				Description: "Get the senders user ID:",
+				Command:     "#id",
+				Response:    "@linneb, Your ID is 215185844",
+			},
+			{
+				Description: "Get the user ID of a different user:",
+				Command:     "#id forsen",
+				Response:    "@linneb, ID of forsen is 22484632.",
+			},
+		},
 	},
 }

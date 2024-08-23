@@ -34,5 +34,17 @@ var help = command{
 		Cooldown:    1 * time.Second,
 		Aliases:     []string{"help", "usage"},
 		Usage:       "#help [command]",
+		Examples: []example{
+			{
+				Description: "Get some information about a command:",
+				Command:     "#help live",
+				Response:    "@linneb, Live: Sends information about a livestream. Aliases: [live, stream]. Usage: \"#live <channel>\".",
+			},
+			{
+				Description: "You can also use an alias for a command:",
+				Command:     "#help stream",
+				Response:    "@linneb, Live: Sends information about a livestream. Aliases: [live, stream]. Usage: \"#live <channel>\".",
+			},
+		},
 	},
 }

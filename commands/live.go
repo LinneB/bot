@@ -62,5 +62,12 @@ var live = command{
 		Cooldown:    3 * time.Second,
 		Aliases:     []string{"live", "stream"},
 		Usage:       "#live <channel>",
+		Examples: []example{
+			{
+				Description: "Check if a channel is live:",
+				Command:     "#live forsen",
+				Response:    "@linneb, https://twitch.tv/forsen has been live for 2h 24m playing \"TEKKEN 8\" with 5757 viewers. EWC 1 million USD top 8!",
+			},
+		},
 	},
 }

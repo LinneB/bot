@@ -19,6 +19,7 @@ type State struct {
 }
 
 type Config struct {
+	BindAddr       string `toml:"bind_addr"`
 	DatabasePath   string `toml:"database_path"`
 	InitialChannel string `toml:"initial_channel"`
 	Prefix         string `toml:"prefix"`

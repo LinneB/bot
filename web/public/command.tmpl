@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=0.8" />
+        <title>Bot</title>
+        <link href="/static/style.css" rel="stylesheet" />
+    </head>
+    <body>
+        {{if .}}
+        <div id="command">
+            <h1>{{.Metadata.Name}}</h1>
+            <p>{{.Metadata.Description}}</p>
+            <div id="usage">Usage: <p>{{.Metadata.Usage}}</p></div>
+            <p>Cooldown: {{.Metadata.Cooldown}}</p>
+            <p>Aliases: </p>
+            <ul style="margin: 0px;">
+                {{range .Metadata.Aliases}}
+                    <li>{{.}}</li>
+                {{end}}
+            </ul>
+
+            <h3>Examples:</h3>
+            {{range .Metadata.Examples}}
+                <div class="example">
+                    <p>{{.Description}}</p>
+                    <p class="example-command">{{.Command}}</p>
+                    <p class="example-response">{{.Response}}</p>
+                </div>
+            {{end}}
+
+            <a href="/">Back to Home</a>
+        </div>
+        {{end}}
+    </body>
+</html>

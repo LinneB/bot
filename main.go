@@ -6,6 +6,7 @@ import (
 	"bot/helix"
 	"bot/models"
 	"bot/utils"
+	"bot/web"
 	"database/sql"
 	"fmt"
 	"log"
@@ -300,11 +301,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create twitchwh client: %s", err)
 	}
-	http.HandleFunc("/eventsub", whClient.Handler)
+
+	log.Println("Starting web server")
+	router, err := web.New(config.BindAddr)
+	if err != nil {
+		log.Fatalf("Could not create web server: %s", err)
+	}
+	router.HandleFunc("POST /eventsub", whClient.Handler)
+	server := &http.Server{
+		Addr:    config.BindAddr,
+		Handler: web.Logging(router),
+	}
 	go func() {
-		log.Printf("Starting http server on port %d", 8080)
-		err := http.ListenAndServe(":8080", nil)
-		if err != nil {
+		if err := server.ListenAndServe(); err != nil {
 			log.Fatalf("Could not start http server: %s", err)
 		}
 	}()

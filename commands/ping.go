@@ -24,5 +24,17 @@ var ping = command{
 		Cooldown:    1 * time.Second,
 		Aliases:     []string{"ping", "uptime"},
 		Usage:       "#ping",
+		Examples: []example{
+			{
+				Description: "Check that the bot is alive:",
+				Command:     "#ping",
+				Response:    "@linneb, Pong! Bot has been up for 5 hours. Database ping is 24 μs.",
+			},
+			{
+				Description: "If the bot is offline, it wont respond!",
+				Command:     "#ping",
+				Response:    "",
+			},
+		},
 	},
 }

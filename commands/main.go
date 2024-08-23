@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bot/models"
+	"cmp"
 	"slices"
 	"time"
 )
@@ -38,6 +39,13 @@ type metadata struct {
 	Cooldown    time.Duration
 	Aliases     []string
 	Usage       string
+	Examples    []example
+}
+
+type example struct {
+	Description string
+	Command     string
+	Response    string
 }
 
 type handler struct {
@@ -68,6 +76,16 @@ func (h *handler) GetCommandByName(name string) (command command, found bool) {
 		}
 	}
 	return command, false
+}
+
+func (h *handler) GetAllCommands() []command {
+	commands := h.Commands
+	slices.SortFunc(commands,
+		func(a, b command) int {
+			return cmp.Compare(a.Metadata.Name, b.Metadata.Name)
+		},
+	)
+	return commands
 }
 
 func (h *handler) IsOnCooldown(id int, name string, cooldown time.Duration) bool {

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=0.8" />
+        <title>LinneBot</title>
+        <link href="/static/style.css" rel="stylesheet" />
+    </head>
+    <body>
+        <script>
+            function onClick() { window.location = "https://twitch.tv/emiru"; };
+        </script>
+        <div id="main">
+            <div id="title">
+                <h1 style="color: #5f9ea0">LinneBot</h1>
+                <p>The worst bot on Twitch</p>
+                <h2>Links</h2>
+                <div id="links" style="flex-direction: row;">
+                    <a href="https://github.com/LinneB/bot" target="_blank">Source code</a>
+                    <a href="https://github.com/LinneB" target="_blank">Github</a>
+                    <a href="https://twitch.tv/LinneB" target="_blank">Twitch</a>
+                </div>
+            </div>
+            {{if gt (len .) 0}}
+                <div id="commands">
+                    <h2>Commands</h2>
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                        </tr>
+                        {{range .}}
+                            <tr>
+                                <td><a href="/command/{{.Metadata.Name}}">{{.Metadata.Name}}</a></td>
+                                <td><p>{{.Metadata.Description}}</p></td>
+                            </tr>
+                        {{end}}
+                    </table>
+                </div>
+            {{end}}
+            <img id="cat" src="/static/cat.webp" alt="cat getting dried off with a blowdryer" onclick="onClick();">
+        </div>
+    </body>
+</html>
