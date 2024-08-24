@@ -16,7 +16,7 @@ var id = command{
 			return "", fmt.Errorf("Could not get ID: %w", err)
 		}
 		if id != nil {
-			return fmt.Sprintf("ID of %s is %d.", ctx.Parameters[0], *id), nil
+			return fmt.Sprintf("ID of %s is %d", ctx.Parameters[0], *id), nil
 		} else {
 			return fmt.Sprintf("User %s not found.", ctx.Parameters[0]), nil
 		}
