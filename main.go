@@ -68,11 +68,13 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 				return
 			}
 			commands.Handler.SetCooldown(context.SenderUserID, command.Metadata.Name)
+			now := time.Now()
 			reply, err := command.Run(state, context)
 			if err != nil {
 				log.Printf("Command execution failed: %s", err)
 				return
 			}
+			log.Printf("Executed %s in %s", command.Metadata.Name, time.Since(now))
 			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 			return
 		}
