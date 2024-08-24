@@ -19,10 +19,11 @@ type State struct {
 }
 
 type Config struct {
-	BindAddr       string `toml:"bind_addr"`
-	DatabasePath   string `toml:"database_path"`
-	InitialChannel string `toml:"initial_channel"`
-	Prefix         string `toml:"prefix"`
+	Admins         []string `toml:"admins"`
+	BindAddr       string   `toml:"bind_addr"`
+	DatabasePath   string   `toml:"database_path"`
+	InitialChannel string   `toml:"initial_channel"`
+	Prefix         string   `toml:"prefix"`
 	Identity       struct {
 		BotUsername  string `toml:"bot_username"`
 		HelixToken   string `toml:"helix_token"`

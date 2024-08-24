@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
 );
 CREATE TABLE IF NOT EXISTS commands (
     chatid INTEGER NOT NULL,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) UNIQUE NOT NULL,
     reply VARCHAR(400) NOT NULL,
     CONSTRAINT fk_chats FOREIGN KEY (chatid) REFERENCES chats (chatid) ON DELETE CASCADE
 );

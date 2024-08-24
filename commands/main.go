@@ -26,6 +26,12 @@ type Context struct {
 	Command string
 	// Command alias used excluding prefix
 	Invocation string
+	// Moderator
+	IsMod bool
+	// Broadcaster
+	IsBroadcaster bool
+	// Admin
+	IsAdmin bool
 }
 
 type command struct {
@@ -114,6 +120,7 @@ var Handler *handler
 func init() {
 	Handler = &handler{
 		Commands: []command{
+			cmd,
 			help,
 			id,
 			live,

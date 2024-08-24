@@ -45,6 +45,9 @@ func newContext(state *models.State, msg irc.PrivateMessage) (context commands.C
 		Parameters:        Arguments[1:],
 		Command:           Arguments[0],
 		Invocation:        Invocation,
+		IsMod:             msg.Tags["mod"] == "1",
+		IsBroadcaster:     SenderUserID == ChannelID,
+		IsAdmin:           slices.Contains(state.Config.Admins, msg.User.Name),
 	}, nil
 }
 
