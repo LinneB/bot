@@ -126,6 +126,7 @@ func init() {
 			live,
 			notify,
 			ping,
+			subscribe,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
 	}
