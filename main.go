@@ -8,6 +8,7 @@ import (
 	"bot/utils"
 	"bot/web"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -105,7 +106,6 @@ func onLive(state *models.State) func(twitchwh.StreamOnline) {
 			return
 		}
 		// Map of chats and their subscribers
-		log.Printf("%s went live!", event.BroadcasterUserName)
 		subscribers := make(map[string][]string)
 
 		// Get subscribed chats
@@ -161,7 +161,39 @@ WHERE
 			subscribers[chatName] = append(subscribers[chatName], username)
 		}
 
-		liveMessage := fmt.Sprintf("https://twitch.tv/%s just went live!", event.BroadcasterUserLogin)
+		// Get stream information
+		req, err := state.Helix.NewRequest("GET", "/streams?user_login="+event.BroadcasterUserLogin)
+		if err != nil {
+			log.Printf("Could not create request: %s", err)
+			return
+		}
+		res, err := state.Helix.HttpClient.Do(req)
+		if err != nil {
+			log.Printf("Could not send request: %s", err)
+			return
+		}
+		if res.StatusCode != 200 {
+			log.Printf("Helix returned unhandled error code: %d", res.StatusCode)
+			return
+		}
+
+		decoder := json.NewDecoder(res.Body)
+		var responseStruct struct {
+			Data []helix.Stream `json:"data"`
+		}
+		err = decoder.Decode(&responseStruct)
+		if err != nil {
+			log.Printf("Could not parse json body: %s", err)
+			return
+		}
+
+		var liveMessage string
+		if len(responseStruct.Data) > 0 {
+			stream := responseStruct.Data[0]
+			liveMessage = fmt.Sprintf("https://twitch.tv/%s just went live playing %s! \"%s\"", stream.UserLogin, stream.GameName, stream.Title)
+		} else {
+			liveMessage = fmt.Sprintf("https://twitch.tv/%s just went live!", event.BroadcasterUserLogin)
+		}
 		for chat, users := range subscribers {
 			for _, message := range utils.SplitStreamOnlineMessage(liveMessage, users, 450) {
 				state.IRC.Say(chat, message)
