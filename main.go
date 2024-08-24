@@ -71,6 +71,7 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 			reply, err := command.Run(state, context)
 			if err != nil {
 				log.Printf("Command execution failed: %s", err)
+				return
 			}
 			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 			return
