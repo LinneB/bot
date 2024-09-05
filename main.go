@@ -4,6 +4,7 @@ import (
 	"bot/commands"
 	"bot/database"
 	"bot/helix"
+	httpclient "bot/http"
 	"bot/models"
 	"bot/utils"
 	"bot/web"
@@ -356,11 +357,18 @@ func main() {
 		}
 	}()
 
+	seventv := httpclient.Client{
+		Client:         &http.Client{},
+		BaseURL:        "https://7tv.io/v3",
+		DefaultHeaders: make(map[string]string),
+	}
+
 	state := models.State{
 		Config:    config,
 		DB:        db,
 		Helix:     &helix,
 		IRC:       ircClient,
+		SevenTV:   &seventv,
 		StartedAt: &startedAt,
 		TwitchWH:  whClient,
 	}

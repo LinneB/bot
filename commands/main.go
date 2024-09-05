@@ -123,6 +123,7 @@ func init() {
 			cmd,
 			help,
 			id,
+			latestEmotes,
 			live,
 			notify,
 			ping,

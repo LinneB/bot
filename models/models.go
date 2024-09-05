@@ -2,6 +2,7 @@ package models
 
 import (
 	"bot/helix"
+	"bot/http"
 	"database/sql"
 	"time"
 
@@ -14,6 +15,7 @@ type State struct {
 	DB        *sql.DB
 	IRC       *irc.Client
 	Helix     *helix.Client
+	SevenTV   *http.Client
 	StartedAt *time.Time
 	TwitchWH  *twitchwh.Client
 }
