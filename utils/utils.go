@@ -11,58 +11,57 @@ import (
 // 3 days and 17 hours -> "3 days"
 // 1 hour and 7 minutes -> "1 hour"
 func PrettyDuration(d time.Duration) string {
-	micros := d.Microseconds()
-	millis := d.Milliseconds()
-	seconds := d.Seconds()
-	minutes := d.Minutes()
-	hours := d.Hours()
-	days := hours / 24.0
-	months := days / 30.0
-	years := months / 12.0
+	const (
+		microsecond = time.Microsecond
+		millisecond = time.Millisecond
+		second      = time.Second
+		minute      = time.Minute
+		hour        = time.Hour
+		day         = hour * 24
+		week        = day * 7
+		month       = day * 30
+		year        = month * 12
+	)
 
-	if years >= 2 {
-		return fmt.Sprintf("%d years", int(years))
+	switch {
+	case d >= year:
+		years := d / year
+		return fmt.Sprintf("%d year%s", years, PluraliseInt(int(years)))
+	case d >= month:
+		months := d / month
+		return fmt.Sprintf("%d month%s", months, PluraliseInt(int(months)))
+	case d >= week:
+		weeks := d / week
+		return fmt.Sprintf("%d week%s", weeks, PluraliseInt(int(weeks)))
+	case d >= day:
+		days := d / day
+		return fmt.Sprintf("%d day%s", days, PluraliseInt(int(days)))
+	case d >= hour:
+		hours := d / hour
+		return fmt.Sprintf("%d hour%s", hours, PluraliseInt(int(hours)))
+	case d >= minute:
+		minutes := d / minute
+		return fmt.Sprintf("%d minute%s", minutes, PluraliseInt(int(minutes)))
+	case d >= second:
+		seconds := d / second
+		return fmt.Sprintf("%d second%s", seconds, PluraliseInt(int(seconds)))
+	case d >= millisecond:
+		milliseconds := d / millisecond
+		return fmt.Sprintf("%d ms", milliseconds)
+	case d >= microsecond:
+		microseconds := d / microsecond
+		return fmt.Sprintf("%d μs", microseconds)
 	}
-	if years >= 1 {
-		return fmt.Sprintf("%d year", int(years))
+	return "now"
+}
+
+// Returns an 's' if i is greater than 1.
+// Example usage: fmt.Sprintf("%d second%s", num, PluraliseInt(num))
+func PluraliseInt(i int) string {
+	if i == 1 {
+		return ""
 	}
-	if months >= 2 {
-		return fmt.Sprintf("%d months", int(months))
-	}
-	if months >= 1 {
-		return fmt.Sprintf("%d month", int(months))
-	}
-	if days >= 2 {
-		return fmt.Sprintf("%d days", int(days))
-	}
-	if days >= 1 {
-		return fmt.Sprintf("%d day", int(days))
-	}
-	if hours >= 2 {
-		return fmt.Sprintf("%d hours", int(hours))
-	}
-	if hours >= 1 {
-		return fmt.Sprintf("%d hour", int(hours))
-	}
-	if minutes >= 2 {
-		return fmt.Sprintf("%d minutes", int(minutes))
-	}
-	if minutes >= 1 {
-		return fmt.Sprintf("%d minute", int(minutes))
-	}
-	if seconds >= 2 {
-		return fmt.Sprintf("%d seconds", int(seconds))
-	}
-	if seconds >= 1 {
-		return fmt.Sprintf("%d second", int(seconds))
-	}
-	if millis >= 1 {
-		return fmt.Sprintf("%d ms", int(millis))
-	}
-	if micros >= 1 {
-		return fmt.Sprintf("%d μs", int(micros))
-	}
-	return ""
+	return "s"
 }
 
 func SplitStreamOnlineMessage(message string, users []string, length int) (messages []string) {

@@ -6,18 +6,39 @@ import (
 )
 
 func TestPrettyDuration(t *testing.T) {
-	expected := "1 second"
-	actual := PrettyDuration(1 * time.Second)
+	const (
+		microsecond = time.Microsecond
+		millisecond = time.Millisecond
+		second      = time.Second
+		minute      = time.Minute
+		hour        = time.Hour
+		day         = hour * 24
+		week        = day * 7
+		month       = day * 30
+		year        = month * 12
+	)
+	expected := "now"
+	actual := PrettyDuration(0)
+	if actual != expected {
+		t.Errorf("Expected %s; Got %s", expected, actual)
+	}
+	expected = "1 second"
+	actual = PrettyDuration(1 * second)
 	if actual != expected {
 		t.Errorf("Expected %s; Got %s", expected, actual)
 	}
 	expected = "1 hour"
-	actual = PrettyDuration(4000 * time.Second)
+	actual = PrettyDuration(1 * hour)
 	if actual != expected {
 		t.Errorf("Expected %s; Got %s", expected, actual)
 	}
-	expected = "2 months"
-	actual = PrettyDuration(70 * 24 * time.Hour)
+	expected = "2 weeks"
+	actual = PrettyDuration(15 * day)
+	if actual != expected {
+		t.Errorf("Expected %s; Got %s", expected, actual)
+	}
+	expected = "2 years"
+	actual = PrettyDuration(2 * year)
 	if actual != expected {
 		t.Errorf("Expected %s; Got %s", expected, actual)
 	}
