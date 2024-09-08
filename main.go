@@ -55,18 +55,17 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 		// Static command
 		var reply string
 		err = state.DB.QueryRow("SELECT reply FROM commands WHERE chatid = $1 AND name = $2", context.ChannelID, context.Invocation).Scan(&reply)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				return
-			}
+		if err != nil && err != sql.ErrNoRows {
 			log.Printf("Could not query database: %s", err)
 			return
 		}
-		if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
-			return
+		if err != sql.ErrNoRows {
+			if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
+				return
+			}
+			commands.Handler.SetCooldown(context.SenderUserID, context.Invocation)
+			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 		}
-		commands.Handler.SetCooldown(context.SenderUserID, context.Invocation)
-		state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 	}
 }
 
@@ -81,15 +80,8 @@ func onLive(state *models.State) func(twitchwh.StreamOnline) {
 		subscribers := make(map[string][]string)
 
 		// Get subscribed chats
-		rows, err := state.DB.Query(`
-SELECT
-  c.chatname,
-  c.chatid
-FROM
-  subscriptions su
-  JOIN chats c ON c.chatid = su.chatid
-WHERE
-  su.subscription_userid = $1;`, streamUserID)
+		query := "SELECT c.chatname, c.chatid FROM subscriptions su JOIN chats c ON c.chatid = su.chatid WHERE su.subscription_userid = $1"
+		rows, err := state.DB.Query(query, streamUserID)
 		if err != nil {
 			log.Printf("Could not query database: %s", err)
 			return
