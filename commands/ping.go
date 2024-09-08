@@ -9,7 +9,7 @@ import (
 
 var ping = command{
 	Run: func(state *models.State, ctx Context) (reply string, err error) {
-		uptime := utils.PrettyDuration(time.Since(*state.StartedAt))
+		uptime := utils.PrettyDuration(time.Since(state.StartedAt))
 		dbStart := time.Now()
 		err = state.DB.Ping()
 		if err != nil {

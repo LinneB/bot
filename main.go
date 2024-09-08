@@ -334,11 +334,11 @@ func main() {
 	state := models.State{
 		Config:    config,
 		DB:        db,
-		Helix:     &helix,
+		Helix:     helix,
 		IRC:       ircClient,
-		IRV:       &irv,
-		SevenTV:   &seventv,
-		StartedAt: &startedAt,
+		IRV:       irv,
+		SevenTV:   seventv,
+		StartedAt: startedAt,
 		TwitchWH:  whClient,
 	}
 
