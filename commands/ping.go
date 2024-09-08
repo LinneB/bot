@@ -4,6 +4,7 @@ import (
 	"bot/models"
 	"bot/utils"
 	"fmt"
+	"runtime"
 	"time"
 )
 
@@ -16,7 +17,18 @@ var ping = command{
 			return reply, fmt.Errorf("Could not ping database: %w", err)
 		}
 		dbPing := utils.PrettyDuration(time.Since(dbStart))
-		return fmt.Sprintf("Pong! Bot has been up for %s. Database ping is %s.", uptime, dbPing), nil
+
+		var memStats runtime.MemStats
+		runtime.ReadMemStats(&memStats)
+		kb := float32(memStats.HeapAlloc) / 1000.0
+		memory := ""
+		if kb/1000.0 > 1 {
+			memory = fmt.Sprintf("%.1f MB", kb/1000.0)
+		} else {
+			memory = fmt.Sprintf("%.0f KB", kb)
+		}
+
+		return fmt.Sprintf("Pong! Bot has been up for %s. Database ping is %s. Heap usage: %s.", uptime, dbPing, memory), nil
 	},
 	Metadata: metadata{
 		Name:        "ping",
@@ -28,7 +40,7 @@ var ping = command{
 			{
 				Description: "Check that the bot is alive:",
 				Command:     "#ping",
-				Response:    "@linneb, Pong! Bot has been up for 5 hours. Database ping is 24 μs.",
+				Response:    "@linneb, Pong! Bot has been up for 9 seconds. Database ping is 12 μs. Heap usage: 1.5 MB.",
 			},
 			{
 				Description: "If the bot is offline, it wont respond!",
