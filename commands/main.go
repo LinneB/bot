@@ -160,6 +160,7 @@ func init() {
 			live,
 			notify,
 			ping,
+			randomEmotes,
 			subscribe,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
