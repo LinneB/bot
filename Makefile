@@ -6,7 +6,7 @@ build: test
 test:
 	go test -v ./...
 
-run:
+run: test
 	go run main.go
 
 fmt:
