@@ -4,7 +4,11 @@ import (
 	"bot/models"
 	"cmp"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
+
+	irc "github.com/gempir/go-twitch-irc/v4"
 )
 
 // Command execution context
@@ -32,6 +36,35 @@ type Context struct {
 	IsBroadcaster bool
 	// Admin
 	IsAdmin bool
+}
+
+func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, err error) {
+	SenderUserID, err := strconv.Atoi(msg.User.ID)
+	if err != nil {
+		return context, err
+	}
+	ChannelID, err := strconv.Atoi(msg.RoomID)
+	if err != nil {
+		return context, err
+	}
+	Arguments := strings.Fields(msg.Message)
+	Invocation := strings.TrimPrefix(Arguments[0], state.Config.Prefix)
+
+	return Context{
+		SenderUserID:      SenderUserID,
+		SenderUsername:    msg.User.Name,
+		SenderDisplayname: msg.User.DisplayName,
+		ChannelID:         ChannelID,
+		ChannelName:       msg.Channel,
+		Message:           msg.Message,
+		Arguments:         Arguments,
+		Parameters:        Arguments[1:],
+		Command:           strings.ToLower(Arguments[0]),
+		Invocation:        strings.ToLower(Invocation),
+		IsMod:             msg.Tags["mod"] == "1",
+		IsBroadcaster:     SenderUserID == ChannelID,
+		IsAdmin:           slices.Contains(state.Config.Admins, msg.User.Name),
+	}, nil
 }
 
 type command struct {

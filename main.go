@@ -24,41 +24,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func newContext(state *models.State, msg irc.PrivateMessage) (context commands.Context, err error) {
-	SenderUserID, err := strconv.Atoi(msg.User.ID)
-	if err != nil {
-		return context, err
-	}
-	ChannelID, err := strconv.Atoi(msg.RoomID)
-	if err != nil {
-		return context, err
-	}
-	Arguments := strings.Fields(msg.Message)
-	Invocation := strings.TrimPrefix(Arguments[0], state.Config.Prefix)
-
-	return commands.Context{
-		SenderUserID:      SenderUserID,
-		SenderUsername:    msg.User.Name,
-		SenderDisplayname: msg.User.DisplayName,
-		ChannelID:         ChannelID,
-		ChannelName:       msg.Channel,
-		Message:           msg.Message,
-		Arguments:         Arguments,
-		Parameters:        Arguments[1:],
-		Command:           strings.ToLower(Arguments[0]),
-		Invocation:        strings.ToLower(Invocation),
-		IsMod:             msg.Tags["mod"] == "1",
-		IsBroadcaster:     SenderUserID == ChannelID,
-		IsAdmin:           slices.Contains(state.Config.Admins, msg.User.Name),
-	}, nil
-}
-
 func onMessage(state *models.State) func(irc.PrivateMessage) {
 	return func(msg irc.PrivateMessage) {
 		if !strings.HasPrefix(msg.Message, state.Config.Prefix) {
 			return
 		}
-		context, err := newContext(state, msg)
+		context, err := commands.NewContext(state, msg)
 		if err != nil {
 			log.Printf("Could not create command context: %s", err)
 		}
