@@ -25,6 +25,9 @@ var latestEmotes = command{
 			userid = *id
 		}
 		res, err := state.SevenTV.NewRequest("GET", "/users/twitch/"+fmt.Sprint(userid))
+		if err != nil {
+			return "", fmt.Errorf("Could not send request: %w", err)
+		}
 		if res.StatusCode == 404 {
 			return "User does not have a 7TV profile.", nil
 		}

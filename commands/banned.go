@@ -13,6 +13,9 @@ var banned = command{
 			return fmt.Sprintf("Missing username. Usage: %s <user>", ctx.Command), nil
 		}
 		res, err := state.IRV.NewRequest("GET", "/twitch/user?login="+ctx.Parameters[0])
+		if err != nil {
+			return "", fmt.Errorf("Could not send request: %w", err)
+		}
 		if res.StatusCode != 200 {
 			return "", fmt.Errorf("IVR returned unhandled status code: %d", res.StatusCode)
 		}
