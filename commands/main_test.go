@@ -15,3 +15,23 @@ func TestLoadedCommands(t *testing.T) {
 		t.Errorf("Missing command file: Expected %d; Loaded %d", cmdFiles, len(Handler.Commands))
 	}
 }
+
+func TestVerifyMetadata(t *testing.T) {
+	for _, c := range Handler.GetAllCommands() {
+		valid := []struct {
+			fieldName string
+			valid     bool
+		}{
+			{"description", c.Metadata.Description != ""},
+			{"cooldown", c.Metadata.Cooldown != 0},
+			{"aliases", c.Metadata.Aliases != nil && len(c.Metadata.Aliases) > 0},
+			{"usage", c.Metadata.Usage != ""},
+			{"examples", c.Metadata.Examples != nil && len(c.Metadata.Aliases) > 0},
+		}
+		for _, v := range valid {
+			if !v.valid {
+				t.Errorf("Missing metadata field %s in command %s", v.fieldName, c.Metadata.Name)
+			}
+		}
+	}
+}
