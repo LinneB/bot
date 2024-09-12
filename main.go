@@ -48,7 +48,11 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 				return
 			}
 			log.Printf("Executed %s in %s", command.Metadata.Name, time.Since(now))
-			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
+			if reply != "" {
+				state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
+			} else {
+				log.Printf("Command returned empty reply")
+			}
 			return
 		}
 
