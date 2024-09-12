@@ -158,6 +158,7 @@ func init() {
 			followers,
 			help,
 			id,
+			join,
 			latestEmotes,
 			live,
 			notify,
