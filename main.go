@@ -320,7 +320,7 @@ func main() {
 		}
 	}()
 
-	irv := httpclient.Client{
+	ivr := httpclient.Client{
 		Client:         &http.Client{},
 		BaseURL:        "https://api.ivr.fi/v2",
 		DefaultHeaders: make(map[string]string),
@@ -336,7 +336,7 @@ func main() {
 		DB:        db,
 		Helix:     helix,
 		IRC:       ircClient,
-		IRV:       irv,
+		IVR:       ivr,
 		SevenTV:   seventv,
 		StartedAt: startedAt,
 		TwitchWH:  whClient,

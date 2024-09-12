@@ -13,7 +13,7 @@ var followers = command{
 		if len(ctx.Parameters) > 0 {
 			login = ctx.Parameters[0]
 		}
-		res, err := state.IRV.NewRequest("GET", "/twitch/user?login="+login)
+		res, err := state.IVR.NewRequest("GET", "/twitch/user?login="+login)
 		if err != nil {
 			return "", fmt.Errorf("Could not send request: %w", err)
 		}

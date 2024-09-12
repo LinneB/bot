@@ -14,7 +14,7 @@ type State struct {
 	Config    Config
 	DB        *sql.DB
 	IRC       *irc.Client
-	IRV       http.Client
+	IVR       http.Client
 	Helix     helix.Client
 	SevenTV   http.Client
 	StartedAt time.Time

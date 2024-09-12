@@ -12,7 +12,7 @@ var banned = command{
 		if len(ctx.Parameters) < 1 {
 			return fmt.Sprintf("Missing username. Usage: %s <user>", ctx.Command), nil
 		}
-		res, err := state.IRV.NewRequest("GET", "/twitch/user?login="+ctx.Parameters[0])
+		res, err := state.IVR.NewRequest("GET", "/twitch/user?login="+ctx.Parameters[0])
 		if err != nil {
 			return "", fmt.Errorf("Could not send request: %w", err)
 		}
