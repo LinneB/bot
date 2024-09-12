@@ -42,7 +42,7 @@ var join = command{
 				return "", fmt.Errorf("Could not insert chat: %w", err)
 			}
 			state.IRC.Join(channel)
-			return fmt.Sprintf("Joining channel %s.", channel), nil
+			return fmt.Sprintf("Joining chat %s.", channel), nil
 		}
 
 		if ctx.Invocation == "part" {
@@ -80,7 +80,28 @@ var join = command{
 		Description: "Join/part channels. Broadcaster required to part, admin required to add.",
 		Cooldown:    1 * time.Second,
 		Aliases:     []string{"join", "part"},
-		Usage:       "#ping",
-		Examples:    []example{{}},
+		Usage:       "#<join|part> <channel>",
+		Examples: []example{
+			{
+				Description: "(Broadcaster) Remove bot from your chat:",
+				Command:     "#part",
+				Response:    "This command will part this chat and DELETE all commands and live notifications PERMANENTLY. Use #part DELETEME to confirm.",
+			},
+			{
+				Description: "(Broadcaster) Confirm and remove bot:",
+				Command:     "#part DELETEME",
+				Response:    "Parting channel. Until we meet again. :)",
+			},
+			{
+				Description: "(Admin) Join a channel:",
+				Command:     "#join LinneB",
+				Response:    "Joining chat LinneB.",
+			},
+			{
+				Description: "(Admin) Part a channel:",
+				Command:     "#part LinneB",
+				Response:    "Leaving chat LinneB.",
+			},
+		},
 	},
 }
