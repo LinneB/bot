@@ -325,6 +325,11 @@ func main() {
 		BaseURL:        "https://api.ivr.fi/v2",
 		DefaultHeaders: make(map[string]string),
 	}
+	rustlog := httpclient.Client{
+		Client:         &http.Client{},
+		BaseURL:        "https://logs.ivr.fi",
+		DefaultHeaders: make(map[string]string),
+	}
 	seventv := httpclient.Client{
 		Client:         &http.Client{},
 		BaseURL:        "https://7tv.io/v3",
@@ -337,6 +342,7 @@ func main() {
 		Helix:     helix,
 		IRC:       ircClient,
 		IVR:       ivr,
+		Rustlog:   rustlog,
 		SevenTV:   seventv,
 		StartedAt: startedAt,
 		TwitchWH:  whClient,

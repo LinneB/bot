@@ -163,6 +163,7 @@ func init() {
 			notify,
 			ping,
 			randomEmotes,
+			randomLog,
 			subscribe,
 			temperature,
 			title,
