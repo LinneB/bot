@@ -37,7 +37,7 @@ var id = command{
 			{
 				Description: "Get the user ID of a different user:",
 				Command:     "#id forsen",
-				Response:    "@linneb, ID of forsen is 22484632.",
+				Response:    "@linneb, ID of forsen is 22484632",
 			},
 		},
 	},
