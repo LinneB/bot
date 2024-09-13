@@ -1,15 +1,13 @@
 package main
 
 import (
-	"bot/commands"
 	"bot/database"
+	"bot/handler"
 	"bot/helix"
 	httpclient "bot/http"
 	"bot/models"
-	"bot/utils"
 	"bot/web"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -24,153 +22,151 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func onMessage(state *models.State) func(irc.PrivateMessage) {
-	return func(msg irc.PrivateMessage) {
-		if !strings.HasPrefix(msg.Message, state.Config.Prefix) {
-			return
+func main() {
+	// TODO: Log to both stdout and a log file
+	log.SetPrefix("Bot: ")
+	log.SetFlags(log.Ltime | log.Lshortfile)
+	startedAt := time.Now()
+
+	log.Println("Loading config file")
+	var config models.Config
+	_, err := toml.DecodeFile("config.toml", &config)
+	if err != nil {
+		log.Fatalf("Could not read and parse config file: %s", err)
+	}
+
+	log.Println("Opening sqlite database")
+	db, err := loadDB(config.DatabasePath)
+	if err != nil {
+		log.Fatalf("Could not load DB: %s", err)
+	}
+
+	log.Println("Creating Helix client")
+	helix := helix.Client{
+		ClientID:    config.Identity.ClientID,
+		HelixURL:    "https://api.twitch.tv/helix",
+		HttpClient:  &http.Client{},
+		Token:       config.Identity.HelixToken,
+		UserIDCache: make(map[string]int),
+	}
+	valid, err := helix.ValidateToken()
+	if err != nil {
+		log.Fatalf("Could not validate Helix token: %s", err)
+	}
+	if !valid {
+		log.Fatalf("Helix token invalid")
+	}
+
+	ircClient := irc.NewClient(
+		config.Identity.BotUsername,
+		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
+	)
+
+	// Get chats from database
+	chats, err := getChatsFromDatabase(db)
+	if err != nil {
+		log.Fatalf("Could not get chats from database: %s", err)
+	}
+	if len(chats) > 0 {
+		log.Printf("Found %d chat(s) in database. Joining...", len(chats))
+		ircClient.Join(chats...)
+	} else {
+		log.Println("No chats found in database, checking config file")
+		if config.InitialChannel == "" {
+			log.Fatal("No channels found in database or config")
 		}
-		context, err := commands.NewContext(state, msg)
+		chat := strings.ToLower(config.InitialChannel)
+		id, err := helix.LoginToID(chat)
 		if err != nil {
-			log.Printf("Could not create command context: %s", err)
+			log.Fatalf("Could not get ID of user: %s", err)
 		}
+		_, err = db.Exec("INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", chat, id)
+		if err != nil {
+			log.Fatalf("Could not insert to database: %s", err)
+		}
+		ircClient.Join(chat)
+	}
 
-		// Interactive command
-		command, found := commands.Handler.GetCommandByAlias(context.Invocation)
-		if found {
-			if context.Role < command.Metadata.MinimumRole {
-				return
-			}
-			if commands.Handler.IsOnCooldown(context.SenderUserID, command.Metadata.Name, command.Metadata.Cooldown) {
-				return
-			}
-			commands.Handler.SetCooldown(context.SenderUserID, command.Metadata.Name)
-			now := time.Now()
-			reply, err := command.Run(state, context)
-			if err != nil {
-				log.Printf("Command execution failed: %s", err)
-				return
-			}
-			log.Printf("Executed %s in %s", command.Metadata.Name, time.Since(now))
-			if reply != "" {
-				state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
-			} else {
-				log.Printf("Command returned empty reply")
-			}
-			return
-		}
+	log.Println("Creating twitchwh client")
+	whClient, err := twitchwh.New(twitchwh.ClientConfig{
+		ClientID:      config.Identity.ClientID,
+		ClientSecret:  config.Identity.ClientSecret,
+		WebhookSecret: config.Eventsub.WebhookSecret,
+		WebhookURL:    config.Eventsub.WebhookURL,
+		Debug:         true,
+	})
+	if err != nil {
+		log.Fatalf("Could not create twitchwh client: %s", err)
+	}
 
-		// Static command
-		var reply string
-		err = state.DB.QueryRow("SELECT reply FROM commands WHERE chatid = $1 AND name = $2", context.ChannelID, context.Invocation).Scan(&reply)
-		if err != nil && err != sql.ErrNoRows {
-			log.Printf("Could not query database: %s", err)
-			return
+	ivr := httpclient.Client{
+		Client:         &http.Client{},
+		BaseURL:        "https://api.ivr.fi/v2",
+		DefaultHeaders: make(map[string]string),
+	}
+	rustlog := httpclient.Client{
+		Client:         &http.Client{},
+		BaseURL:        "https://logs.ivr.fi",
+		DefaultHeaders: make(map[string]string),
+	}
+	seventv := httpclient.Client{
+		Client:         &http.Client{},
+		BaseURL:        "https://7tv.io/v3",
+		DefaultHeaders: make(map[string]string),
+	}
+
+	state := models.State{
+		Config:    config,
+		DB:        db,
+		Helix:     helix,
+		IRC:       ircClient,
+		IVR:       ivr,
+		Rustlog:   rustlog,
+		SevenTV:   seventv,
+		StartedAt: startedAt,
+		TwitchWH:  whClient,
+	}
+
+	ircClient.OnPrivateMessage(handler.OnMessage(&state))
+	ircClient.OnConnect(func() { log.Println("Connected to chat") })
+
+	whClient.OnStreamOnline = handler.OnLive(&state)
+	err = loadSubscriptions(&state)
+	if err != nil {
+		log.Fatalf("Could not load eventsub subscriptions: %s", err)
+	}
+
+	log.Println("Starting web server")
+	router, err := web.New(config.BindAddr)
+	if err != nil {
+		log.Fatalf("Could not create web server: %s", err)
+	}
+	router.HandleFunc("POST /eventsub", whClient.Handler)
+	server := &http.Server{
+		Addr:    config.BindAddr,
+		Handler: web.Logging(router),
+	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Fatalf("Could not start http server: %s", err)
 		}
-		if err != sql.ErrNoRows {
-			if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
-				return
-			}
-			commands.Handler.SetCooldown(context.SenderUserID, context.Invocation)
-			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
-		}
+	}()
+
+	if err := ircClient.Connect(); err != nil {
+		log.Fatalf("Twitch chat connection failed: %s", err)
 	}
 }
 
-func onLive(state *models.State) func(twitchwh.StreamOnline) {
-	return func(event twitchwh.StreamOnline) {
-		streamUserID, err := strconv.Atoi(event.BroadcasterUserID)
-		if err != nil {
-			log.Printf("UserID \"%s\" is not convertable to int: %s", event.BroadcasterUserID, err)
-			return
-		}
-		// Map of chats and their subscribers
-		subscribers := make(map[string][]string)
-
-		// Get subscribed chats
-		query := "SELECT c.chatname, c.chatid FROM subscriptions su JOIN chats c ON c.chatid = su.chatid WHERE su.subscription_userid = $1"
-		rows, err := state.DB.Query(query, streamUserID)
-		if err != nil {
-			log.Printf("Could not query database: %s", err)
-			return
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var chat database.Chat
-			err := rows.Scan(&chat.ChatName, &chat.ChatID)
-			if err != nil {
-				log.Printf("Could not scan row: %s", err)
-				return
-			}
-			subscribers[chat.ChatName] = []string{}
-		}
-
-		// Get subscribed users
-		rows, err = state.DB.Query(`
-SELECT
-  c.chatname,
-  s.subscriber_username
-FROM
-  subscribers s
-  JOIN chats c ON c.chatid = s.chatid
-  JOIN subscriptions su ON su.subscription_id = s.subscription_id
-WHERE
-  su.subscription_userid = $1;`, streamUserID)
-		if err != nil {
-			log.Printf("Could not query database: %s", err)
-			return
-		}
-		for rows.Next() {
-			var (
-				chatName string
-				username string
-			)
-			err := rows.Scan(&chatName, &username)
-			if err != nil {
-				log.Printf("Could not scan row: %s", err)
-				return
-			}
-			subscribers[chatName] = append(subscribers[chatName], username)
-		}
-
-		// Get stream information
-		req, err := state.Helix.NewRequest("GET", "/streams?user_login="+event.BroadcasterUserLogin)
-		if err != nil {
-			log.Printf("Could not create request: %s", err)
-			return
-		}
-		res, err := state.Helix.HttpClient.Do(req)
-		if err != nil {
-			log.Printf("Could not send request: %s", err)
-			return
-		}
-		if res.StatusCode != 200 {
-			log.Printf("Helix returned unhandled error code: %d", res.StatusCode)
-			return
-		}
-
-		decoder := json.NewDecoder(res.Body)
-		var responseStruct struct {
-			Data []helix.Stream `json:"data"`
-		}
-		err = decoder.Decode(&responseStruct)
-		if err != nil {
-			log.Printf("Could not parse json body: %s", err)
-			return
-		}
-
-		var liveMessage string
-		if len(responseStruct.Data) > 0 {
-			stream := responseStruct.Data[0]
-			liveMessage = fmt.Sprintf("https://twitch.tv/%s just went live playing %s! \"%s\"", stream.UserLogin, stream.GameName, stream.Title)
-		} else {
-			liveMessage = fmt.Sprintf("https://twitch.tv/%s just went live!", event.BroadcasterUserLogin)
-		}
-		for chat, users := range subscribers {
-			for _, message := range utils.SplitStreamOnlineMessage(liveMessage, users, 450) {
-				state.IRC.Say(chat, message)
-			}
-		}
+func loadDB(path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", path))
+	if err != nil {
+		return nil, fmt.Errorf("Could not open sqlite database: %w", err)
 	}
+	err = database.CreateTables(db)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create required tables: %w", err)
+	}
+	return db, nil
 }
 
 func loadSubscriptions(s *models.State) error {
@@ -221,51 +217,7 @@ func loadSubscriptions(s *models.State) error {
 	return nil
 }
 
-func main() {
-	// TODO: Log to both stdout and a log file
-	log.SetPrefix("Bot: ")
-	log.SetFlags(log.Ltime | log.Lshortfile)
-	startedAt := time.Now()
-
-	log.Println("Loading config file")
-	var config models.Config
-	_, err := toml.DecodeFile("config.toml", &config)
-	if err != nil {
-		log.Fatalf("Could not read and parse config file: %s", err)
-	}
-
-	log.Println("Opening sqlite database")
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", config.DatabasePath))
-	if err != nil {
-		log.Fatalf("Could not open sqlite database: %s", err)
-	}
-	err = database.CreateTables(db)
-	if err != nil {
-		log.Fatalf("Could not create required SQL tables: %s", err)
-	}
-
-	log.Println("Creating Helix client")
-	helix := helix.Client{
-		ClientID:    config.Identity.ClientID,
-		HelixURL:    "https://api.twitch.tv/helix",
-		HttpClient:  &http.Client{},
-		Token:       config.Identity.HelixToken,
-		UserIDCache: make(map[string]int),
-	}
-	valid, err := helix.ValidateToken()
-	if err != nil {
-		log.Fatalf("Could not validate Helix token: %s", err)
-	}
-	if !valid {
-		log.Fatalf("Helix token invalid")
-	}
-
-	ircClient := irc.NewClient(
-		config.Identity.BotUsername,
-		fmt.Sprintf("oauth:%s", config.Identity.HelixToken),
-	)
-
-	// Get chats from database
+func getChatsFromDatabase(db *sql.DB) ([]string, error) {
 	rows, err := db.Query("SELECT chatname FROM chats GROUP BY chatid")
 	if err != nil {
 		log.Fatalf("Could not get chats from database: %s", err)
@@ -279,92 +231,5 @@ func main() {
 		}
 		chats = append(chats, chat)
 	}
-	if len(chats) > 0 {
-		log.Printf("Found %d channels in database. Joining...", len(chats))
-		ircClient.Join(chats...)
-	} else {
-		// Init chat from config
-		log.Println("No chats found in database, checking config file")
-		if config.InitialChannel == "" {
-			log.Fatal("No channels found in database or config")
-		}
-		id, err := helix.LoginToID(config.InitialChannel)
-		if err != nil {
-			log.Fatalf("Could not get ID of user: %s", err)
-		}
-		_, err = db.Exec("INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", config.InitialChannel, id)
-		if err != nil {
-			log.Fatalf("Could not insert to database: %s", err)
-		}
-		ircClient.Join(config.InitialChannel)
-	}
-
-	log.Println("Creating twitchwh client")
-	whClient, err := twitchwh.New(twitchwh.ClientConfig{
-		ClientID:      config.Identity.ClientID,
-		ClientSecret:  config.Identity.ClientSecret,
-		WebhookSecret: config.Eventsub.WebhookSecret,
-		WebhookURL:    config.Eventsub.WebhookURL,
-		Debug:         true,
-	})
-	if err != nil {
-		log.Fatalf("Could not create twitchwh client: %s", err)
-	}
-
-	log.Println("Starting web server")
-	router, err := web.New(config.BindAddr)
-	if err != nil {
-		log.Fatalf("Could not create web server: %s", err)
-	}
-	router.HandleFunc("POST /eventsub", whClient.Handler)
-	server := &http.Server{
-		Addr:    config.BindAddr,
-		Handler: web.Logging(router),
-	}
-	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Fatalf("Could not start http server: %s", err)
-		}
-	}()
-
-	ivr := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://api.ivr.fi/v2",
-		DefaultHeaders: make(map[string]string),
-	}
-	rustlog := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://logs.ivr.fi",
-		DefaultHeaders: make(map[string]string),
-	}
-	seventv := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://7tv.io/v3",
-		DefaultHeaders: make(map[string]string),
-	}
-
-	state := models.State{
-		Config:    config,
-		DB:        db,
-		Helix:     helix,
-		IRC:       ircClient,
-		IVR:       ivr,
-		Rustlog:   rustlog,
-		SevenTV:   seventv,
-		StartedAt: startedAt,
-		TwitchWH:  whClient,
-	}
-
-	ircClient.OnPrivateMessage(onMessage(&state))
-	ircClient.OnConnect(func() { log.Println("Connected to chat") })
-
-	whClient.OnStreamOnline = onLive(&state)
-	err = loadSubscriptions(&state)
-	if err != nil {
-		log.Fatalf("Could not load eventsub subscriptions: %s", err)
-	}
-
-	if err := ircClient.Connect(); err != nil {
-		log.Fatalf("Twitch chat connection failed: %s", err)
-	}
+	return chats, nil
 }
