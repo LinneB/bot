@@ -173,14 +173,14 @@ func loadSubscriptions(s *models.State) error {
 	var databaseIDs []int
 	rows, err := s.DB.Query("SELECT subscription_userid FROM subscriptions GROUP BY subscription_userid")
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not query database: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int
 		err := rows.Scan(&id)
 		if err != nil {
-			return err
+			return fmt.Errorf("Could not scan row: %w", err)
 		}
 		databaseIDs = append(databaseIDs, id)
 	}
@@ -188,7 +188,7 @@ func loadSubscriptions(s *models.State) error {
 	var activeIDs []int
 	subscriptions, err := s.TwitchWH.GetSubscriptionsByStatus("enabled")
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not get subscriptions: %w", err)
 	}
 	for _, sub := range subscriptions {
 		if sub.Type != "stream.online" {
@@ -196,7 +196,7 @@ func loadSubscriptions(s *models.State) error {
 		}
 		id, err := strconv.Atoi(sub.Condition.BroadcasterUserID)
 		if err != nil {
-			return err
+			return fmt.Errorf("Condition ID \"%s\" is not a number: %w", sub.Condition.BroadcasterUserID, err)
 		}
 		activeIDs = append(activeIDs, id)
 	}
@@ -220,14 +220,14 @@ func loadSubscriptions(s *models.State) error {
 func getChatsFromDatabase(db *sql.DB) ([]string, error) {
 	rows, err := db.Query("SELECT chatname FROM chats GROUP BY chatid")
 	if err != nil {
-		log.Fatalf("Could not get chats from database: %s", err)
+		return nil, fmt.Errorf("Could not query database: %w", err)
 	}
 	var chats []string
 	for rows.Next() {
 		var chat string
 		err := rows.Scan(&chat)
 		if err != nil {
-			log.Fatalf("Could not scan row: %s", err)
+			return nil, fmt.Errorf("Could not scan row: %w", err)
 		}
 		chats = append(chats, chat)
 	}
