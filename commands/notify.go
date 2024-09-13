@@ -95,7 +95,7 @@ var notify = command{
 		Cooldown:    3 * time.Second,
 		MinimumRole: RMod,
 		Aliases:     []string{"notify", "notif", "livenotif"},
-		Usage:       "#notify <add|remove> channel",
+		Usage:       "#notify <add|remove> <channel>",
 		Examples: []example{
 			{
 				Description: "Add a channel to the chats live notifications:",
