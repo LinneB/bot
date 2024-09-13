@@ -47,6 +47,7 @@ var subscribe = command{
 		Name:        "subscribe",
 		Description: "Subscribe/unsubscribe from live notifications.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"subscribe"},
 		Usage:       "#subscribe <channel>",
 		Examples: []example{

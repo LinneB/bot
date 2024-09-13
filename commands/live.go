@@ -60,6 +60,7 @@ var live = command{
 		Name:        "live",
 		Description: "Sends information about a livestream.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"live", "stream"},
 		Usage:       "#live <channel>",
 		Examples: []example{

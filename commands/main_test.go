@@ -26,6 +26,7 @@ func TestVerifyMetadata(t *testing.T) {
 			{"cooldown", c.Metadata.Cooldown != 0},
 			{"aliases", len(c.Metadata.Aliases) > 0},
 			{"usage", c.Metadata.Usage != ""},
+			{"minimumRole", c.Metadata.MinimumRole != 0},
 			{"examples", len(c.Metadata.Examples) > 0},
 		}
 		for _, v := range valid {

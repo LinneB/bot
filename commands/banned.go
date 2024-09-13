@@ -40,6 +40,7 @@ var banned = command{
 		Name:        "banned",
 		Description: "Checks if a user is banned on Twitch.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"banned"},
 		Usage:       "#banned <user>",
 		Examples: []example{

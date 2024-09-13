@@ -79,6 +79,7 @@ var join = command{
 		Name:        "join",
 		Description: "Join/part channels. Broadcaster required to part, admin required to add.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RBroadcaster,
 		Aliases:     []string{"join", "part"},
 		Usage:       "#<join|part> <channel>",
 		Examples: []example{

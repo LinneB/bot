@@ -9,9 +9,6 @@ import (
 
 var cmd = command{
 	Run: func(state *models.State, ctx Context) (reply string, err error) {
-		if !ctx.IsMod && !ctx.IsBroadcaster && !ctx.IsAdmin {
-			return "You need to be at least a moderator to use this command!", nil
-		}
 		if len(ctx.Parameters) == 0 {
 			return fmt.Sprintf("Missing subcommand: Usage: %s <add|remove|edit> [args].", ctx.Command), nil
 		}
@@ -104,8 +101,9 @@ var cmd = command{
 	},
 	Metadata: metadata{
 		Name:        "cmd",
-		Description: "Add/remove/edit static commands. Mod required.",
+		Description: "Add/remove/edit static commands.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RMod,
 		Aliases:     []string{"cmd", "command"},
 		Usage:       "#cmd <add|remove|edit> [args]",
 		Examples: []example{

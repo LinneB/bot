@@ -37,6 +37,7 @@ var followers = command{
 		Name:        "followers",
 		Description: "Gets the follow count for a user.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"followers", "followcount"},
 		Usage:       "#followers [user]",
 		Examples: []example{{

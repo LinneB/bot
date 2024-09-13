@@ -53,6 +53,7 @@ var title = command{
 		Name:        "title",
 		Description: "Gets the title of a channel. Defaults to current chat.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"title"},
 		Usage:       "#title [channel]",
 		Examples: []example{

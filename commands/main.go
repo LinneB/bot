@@ -11,6 +11,13 @@ import (
 	irc "github.com/gempir/go-twitch-irc/v4"
 )
 
+const (
+	RGeneric = iota + 1
+	RMod
+	RBroadcaster
+	RAdmin
+)
+
 // Command execution context
 type Context struct {
 	// Sender information
@@ -36,6 +43,8 @@ type Context struct {
 	IsBroadcaster bool
 	// Admin
 	IsAdmin bool
+	// Role
+	Role int
 }
 
 func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, err error) {
@@ -49,6 +58,19 @@ func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, e
 	}
 	Arguments := strings.Fields(msg.Message)
 	Invocation := strings.TrimPrefix(Arguments[0], state.Config.Prefix)
+	isMod := msg.Tags["mod"] == "1"
+	isBroadcaster := SenderUserID == ChannelID
+	isAdmin := slices.Contains(state.Config.Admins, msg.User.Name)
+	role := RGeneric
+	if isMod {
+		role = RMod
+	}
+	if isBroadcaster {
+		role = RBroadcaster
+	}
+	if isAdmin {
+		role = RAdmin
+	}
 
 	return Context{
 		SenderUserID:      SenderUserID,
@@ -61,9 +83,10 @@ func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, e
 		Parameters:        Arguments[1:],
 		Command:           strings.ToLower(Arguments[0]),
 		Invocation:        strings.ToLower(Invocation),
-		IsMod:             msg.Tags["mod"] == "1",
-		IsBroadcaster:     SenderUserID == ChannelID,
-		IsAdmin:           slices.Contains(state.Config.Admins, msg.User.Name),
+		IsMod:             isMod,
+		IsBroadcaster:     isBroadcaster,
+		IsAdmin:           isAdmin,
+		Role:              role,
 	}, nil
 }
 
@@ -76,9 +99,22 @@ type metadata struct {
 	Name        string
 	Description string
 	Cooldown    time.Duration
+	MinimumRole int
 	Aliases     []string
 	Usage       string
 	Examples    []example
+}
+
+func (m metadata) PrettyRole() string {
+	switch m.MinimumRole {
+	case RAdmin:
+		return "Admin"
+	case RBroadcaster:
+		return "Broadcaster"
+	case RMod:
+		return "Mod"
+	}
+	return "None"
 }
 
 type example struct {

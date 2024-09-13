@@ -45,6 +45,7 @@ var randomLog = command{
 		Name:        "randomLog",
 		Description: "Sends a random message from a user in a chat. Requires the channel to be logged on https://logs.ivr.fi",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"randomlog", "rl"},
 		Usage:       "#rl <user> <channel>",
 		Examples: []example{{

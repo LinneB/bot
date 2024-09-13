@@ -65,6 +65,7 @@ var latestEmotes = command{
 		Name:        "latestEmotes",
 		Description: "Posts the 5 most recent 7TV emotes added to the current chat.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"latestemotes", "le"},
 		Usage:       "#le [channel]",
 		Examples: []example{

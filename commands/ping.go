@@ -34,6 +34,7 @@ var ping = command{
 		Name:        "ping",
 		Description: "Returns uptime and other information.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"ping", "uptime"},
 		Usage:       "#ping",
 		Examples: []example{

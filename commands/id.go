@@ -25,6 +25,7 @@ var id = command{
 		Name:        "id",
 		Description: "Gets the Twitch user ID for you or another user.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"id", "userid"},
 		Usage:       "#id [user]",
 		Examples: []example{

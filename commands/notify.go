@@ -13,9 +13,6 @@ import (
 
 var notify = command{
 	Run: func(state *models.State, ctx Context) (reply string, err error) {
-		if !ctx.IsMod && !ctx.IsBroadcaster && !ctx.IsAdmin {
-			return "You need to be at least a moderator to use this command!", nil
-		}
 		if len(ctx.Parameters) < 1 {
 			return fmt.Sprintf("No subcommand provided. Usage: %s <add|remove> <channel>.", ctx.Command), nil
 		}
@@ -94,8 +91,9 @@ var notify = command{
 	},
 	Metadata: metadata{
 		Name:        "notify",
-		Description: "Add/remove channels from live notifications. Mod required.",
+		Description: "Add/remove channels from live notifications.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RMod,
 		Aliases:     []string{"notify", "notif", "livenotif"},
 		Usage:       "#notify <add|remove> channel",
 		Examples: []example{

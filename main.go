@@ -37,6 +37,9 @@ func onMessage(state *models.State) func(irc.PrivateMessage) {
 		// Interactive command
 		command, found := commands.Handler.GetCommandByAlias(context.Invocation)
 		if found {
+			if context.Role < command.Metadata.MinimumRole {
+				return
+			}
 			if commands.Handler.IsOnCooldown(context.SenderUserID, command.Metadata.Name, command.Metadata.Cooldown) {
 				return
 			}

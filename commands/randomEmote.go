@@ -64,6 +64,7 @@ var randomEmotes = command{
 		Name:        "randomEmotes",
 		Description: "Posts 5 random 7TV emotes.",
 		Cooldown:    3 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"randomemotes", "re"},
 		Usage:       "#re [channel]",
 		Examples: []example{

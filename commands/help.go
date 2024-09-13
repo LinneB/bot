@@ -32,6 +32,7 @@ var help = command{
 		Name:        "help",
 		Description: "Shows a help message for a specific command.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"help", "usage"},
 		Usage:       "#help [command]",
 		Examples: []example{

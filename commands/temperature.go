@@ -34,6 +34,7 @@ var temperature = command{
 		Name:        "temperature",
 		Description: "Convert temperature to various other units.",
 		Cooldown:    1 * time.Second,
+		MinimumRole: RGeneric,
 		Aliases:     []string{"ctof", "ctf", "ftoc", "ftc"},
 		Usage:       "#<ctof|ftoc> <temperature>",
 		Examples: []example{
