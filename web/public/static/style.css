@@ -19,6 +19,7 @@ body {
 
 body a {
     color: var(--link-color);
+    text-decoration: none;
 }
 
 body a:hover {
@@ -54,9 +55,8 @@ body table, img {
 #links a {
     padding: 5px;
     margin: 5px;
-    border: 1px solid var(--light-white);
+    border: 1px solid var(--linnebot);
     background-color: var(--light-background);
-    text-decoration: none;
 }
 
 #links a:hover {
@@ -73,12 +73,11 @@ body table, img {
 
 #commands td {
     background-color: var(--light-background);
+    border: 1px solid var(--linnebot);
 }
 
-#commands th,
-td {
-    border: 1px solid var(--light-white);
-    padding: 10px;
+#commands th, td {
+    padding: 5px;
     text-align: center;
 }
 
@@ -95,18 +94,27 @@ td {
     max-width: 50%;
 }
 
+#extended-description {
+    background-color: var(--light-background);
+    border: 1px solid var(--linnebot);
+    padding: 5px;
+}
+
 #usage {
     display: flex;
+    align-items: center;
 }
 
 #usage p {
     margin: 0;
     margin-left: 5px;
-    background-color: var(--background);
+    padding: 2px;
+    background-color: var(--light-background);
+    border: 1px solid var(--linnebot);
 }
 
 .example {
-    border: 1px solid var(--light-white);
+    border: 1px solid var(--linnebot);
     padding: 10px;
     margin-bottom: 10px;
     background-color: var(--light-background);

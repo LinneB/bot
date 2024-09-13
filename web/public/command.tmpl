@@ -11,6 +11,9 @@
         <div id="command">
             <h1>{{.Metadata.Name}}</h1>
             <p>{{.Metadata.Description}}</p>
+            {{if .Metadata.ExtendedDescription}}
+            <p id="extended-description">{{.Metadata.ExtendedDescription}}</p>
+            {{end}}
             <div id="usage">Usage: <p>{{.Metadata.Usage}}</p></div>
             <p>Cooldown: {{.Metadata.Cooldown}}</p>
             <p>Minimum role: {{.Metadata.PrettyRole}}</p>

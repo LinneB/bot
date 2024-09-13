@@ -76,12 +76,13 @@ var join = command{
 		return "", fmt.Errorf("This error is impossible and will never happen")
 	},
 	Metadata: metadata{
-		Name:        "join",
-		Description: "Join/part channels. Broadcaster required to part, admin required to add.",
-		Cooldown:    1 * time.Second,
-		MinimumRole: RBroadcaster,
-		Aliases:     []string{"join", "part"},
-		Usage:       "#<join|part> <channel>",
+		Name:                "join",
+		Description:         "Join/part channels. Broadcaster required to part, admin required to add.",
+		ExtendedDescription: "This command manages joined chats. Broadcasters can use it to remove the bot from their chat, while admins can use it to join/part any chat.",
+		Cooldown:            1 * time.Second,
+		MinimumRole:         RBroadcaster,
+		Aliases:             []string{"join", "part"},
+		Usage:               "#<join|part> <channel>",
 		Examples: []example{
 			{
 				Description: "(Broadcaster) Remove bot from your chat:",

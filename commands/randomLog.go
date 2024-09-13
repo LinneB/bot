@@ -42,12 +42,13 @@ var randomLog = command{
 		return fmt.Sprintf("[%s] %s: %s", msg.Timestamp.Format(time.DateTime), msg.DisplayName, msg.Text), nil
 	},
 	Metadata: metadata{
-		Name:        "randomLog",
-		Description: "Sends a random message from a user in a chat. Requires the channel to be logged on https://logs.ivr.fi",
-		Cooldown:    3 * time.Second,
-		MinimumRole: RGeneric,
-		Aliases:     []string{"randomlog", "rl"},
-		Usage:       "#rl <user> <channel>",
+		Name:                "randomLog",
+		Description:         "Sends a random message from a user in a chat.",
+		ExtendedDescription: "This command requires that the channel is being logged on https://logs.ivr.fi and that the user has not opted out.",
+		Cooldown:            3 * time.Second,
+		MinimumRole:         RGeneric,
+		Aliases:             []string{"randomlog", "rl"},
+		Usage:               "#rl <user> <channel>",
 		Examples: []example{{
 			Description: "Get a random log from LinneB in forsen's chat:",
 			Command:     "#rl linneb forsen",

@@ -90,12 +90,13 @@ var notify = command{
 		return "Invalid subcommand.", nil
 	},
 	Metadata: metadata{
-		Name:        "notify",
-		Description: "Add/remove channels from live notifications.",
-		Cooldown:    3 * time.Second,
-		MinimumRole: RMod,
-		Aliases:     []string{"notify", "notif", "livenotif"},
-		Usage:       "#notify <add|remove> <channel>",
+		Name:                "notify",
+		Description:         "Add/remove channels from live notifications.",
+		ExtendedDescription: "The bot can send notifications to a chat when a channel goes live. This command is used to add/remove channels. If you want to be pinged for an existing notification, you can use the \"subscribe\" command.",
+		Cooldown:            3 * time.Second,
+		MinimumRole:         RMod,
+		Aliases:             []string{"notify", "notif", "livenotif"},
+		Usage:               "#notify <add|remove> <channel>",
 		Examples: []example{
 			{
 				Description: "Add a channel to the chats live notifications:",

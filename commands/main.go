@@ -98,11 +98,14 @@ type command struct {
 type metadata struct {
 	Name        string
 	Description string
-	Cooldown    time.Duration
-	MinimumRole int
-	Aliases     []string
-	Usage       string
-	Examples    []example
+	// Optional text block with extended information.
+	// Only displayed on website.
+	ExtendedDescription string
+	Cooldown            time.Duration
+	MinimumRole         int
+	Aliases             []string
+	Usage               string
+	Examples            []example
 }
 
 func (m metadata) PrettyRole() string {
