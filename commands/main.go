@@ -206,6 +206,7 @@ func init() {
 			randomLog,
 			subscribe,
 			temperature,
+			thumbnail,
 			title,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
