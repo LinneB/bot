@@ -21,10 +21,11 @@ var help = command{
 				return "Command name/alias not found.", nil
 			}
 		}
-		return fmt.Sprintf("%s: %s Aliases: [%s]. Usage: \"%s\".",
+		return fmt.Sprintf("%s: %s Aliases: [%s]. Minimum role: %s. Usage: \"%s\".",
 			utils.CapitalizeFirstCharacter(command.Metadata.Name),
 			command.Metadata.Description,
 			strings.Join(command.Metadata.Aliases, ", "),
+			command.Metadata.PrettyRole(),
 			command.Metadata.Usage,
 		), nil
 	},
