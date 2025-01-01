@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bot/commands"
-	"bot/database"
 	"bot/helix"
 	"bot/models"
 	"bot/utils"
@@ -90,7 +89,7 @@ func OnLive(state *models.State) func(twitchwh.StreamOnline) {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			var chat database.Chat
+			var chat models.Chat
 			err := rows.Scan(&chat.ChatName, &chat.ChatID)
 			if err != nil {
 				log.Printf("Could not scan row: %s", err)
