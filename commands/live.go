@@ -20,13 +20,20 @@ var live = command{
 		}
 		res, err := state.Helix.HttpClient.Do(req)
 		if err != nil {
-			return "", fmt.Errorf("Could not send request: %w", err)
+			return "", &models.APIError{
+				URL: req.URL,
+				Err: err,
+			}
 		}
 		if res.StatusCode == 400 {
 			return fmt.Sprintf("User %s not found.", channel), nil
 		}
 		if res.StatusCode != 200 {
-			return "", fmt.Errorf("Helix returned unhandled error code: %d", res.StatusCode)
+			return "", &models.APIError{
+				URL:    req.URL,
+				Status: res.StatusCode,
+				Err:    err,
+			}
 		}
 
 		decoder := json.NewDecoder(res.Body)

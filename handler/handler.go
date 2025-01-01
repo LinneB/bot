@@ -7,6 +7,7 @@ import (
 	"bot/utils"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -41,7 +42,13 @@ func OnMessage(state *models.State) func(irc.PrivateMessage) {
 			now := time.Now()
 			reply, err := command.Run(state, context)
 			if err != nil {
-				log.Printf("Command execution failed: %s", err)
+				var ae *models.APIError
+				if errors.As(err, &ae) {
+					log.Printf("%s", err)
+					state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, :( 3rd party API failure.", msg.User.Name))
+				} else {
+					log.Printf("Command execution failed: %s", err)
+				}
 				return
 			}
 			log.Printf("Executed %s in %s", command.Metadata.Name, time.Since(now))
