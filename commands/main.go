@@ -192,22 +192,10 @@ var Handler *handler
 func init() {
 	Handler = &handler{
 		Commands: []command{
-			banned,
-			cmd,
-			followers,
 			help,
-			id,
 			join,
-			latestEmotes,
 			live,
-			notify,
 			ping,
-			randomEmotes,
-			randomLog,
-			subscribe,
-			temperature,
-			thumbnail,
-			title,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
 	}
