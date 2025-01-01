@@ -6,19 +6,21 @@ import (
 
 type Client struct {
 	Client         *http.Client
-	BaseURL        string
 	DefaultHeaders map[string]string
 }
 
-func (c *Client) NewRequest(method string, endpoint string) (res *http.Response, err error) {
-	url := c.BaseURL + endpoint
-	req, err := http.NewRequest(method, url, nil)
+type Request struct {
+	Method string
+	URL    string
+}
+
+func (c *Client) GenericRequest(r Request) (res *http.Response, err error) {
+	request, err := http.NewRequest(r.Method, r.URL, nil)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	for key, value := range c.DefaultHeaders {
-		req.Header.Set(key, value)
+		request.Header.Set(key, value)
 	}
-
-	return c.Client.Do(req)
+	return c.Client.Do(request)
 }

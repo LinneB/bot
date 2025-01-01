@@ -99,30 +99,17 @@ func main() {
 		log.Fatalf("Could not create twitchwh client: %s", err)
 	}
 
-	ivr := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://api.ivr.fi/v2",
-		DefaultHeaders: make(map[string]string),
-	}
-	rustlog := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://logs.ivr.fi",
-		DefaultHeaders: make(map[string]string),
-	}
-	seventv := httpclient.Client{
-		Client:         &http.Client{},
-		BaseURL:        "https://7tv.io/v3",
-		DefaultHeaders: make(map[string]string),
-	}
-
 	state := models.State{
-		Config:    config,
-		DB:        db,
-		Helix:     helix,
+		Config: config,
+		DB:     db,
+		Helix:  helix,
+		Http: httpclient.Client{
+			Client: &http.Client{},
+			DefaultHeaders: map[string]string{
+				"User-Agent": "LinneB/bot (https://github.com/LinneB/bot)",
+			},
+		},
 		IRC:       ircClient,
-		IVR:       ivr,
-		Rustlog:   rustlog,
-		SevenTV:   seventv,
 		StartedAt: startedAt,
 		TwitchWH:  whClient,
 	}

@@ -14,10 +14,8 @@ type State struct {
 	Config    Config
 	DB        *sql.DB
 	Helix     helix.Client
+	Http      http.Client
 	IRC       *irc.Client
-	IVR       http.Client
-	Rustlog   http.Client
-	SevenTV   http.Client
 	StartedAt time.Time
 	TwitchWH  *twitchwh.Client
 }
