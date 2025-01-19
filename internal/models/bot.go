@@ -3,16 +3,16 @@ package models
 import (
 	"bot/internal/helix"
 	"bot/internal/http"
-	"database/sql"
 	"time"
 
 	"github.com/LinneB/twitchwh"
 	irc "github.com/gempir/go-twitch-irc/v4"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type State struct {
 	Config    Config
-	DB        *sql.DB
+	DB        *pgxpool.Pool
 	Helix     helix.Client
 	Http      http.Client
 	IRC       *irc.Client
@@ -23,7 +23,7 @@ type State struct {
 type Config struct {
 	Admins         []string `toml:"admins"`
 	BindAddr       string   `toml:"bind_addr"`
-	DatabasePath   string   `toml:"database_path"`
+	DatabaseURL    string   `toml:"database_url"`
 	InitialChannel string   `toml:"initial_channel"`
 	Prefix         string   `toml:"prefix"`
 	Identity       struct {

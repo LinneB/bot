@@ -3,6 +3,7 @@ package commands
 import (
 	"bot/internal/models"
 	"bot/internal/utils"
+	"context"
 	"fmt"
 	"runtime"
 	"time"
@@ -12,7 +13,7 @@ var ping = command{
 	Run: func(state *models.State, ctx Context) (reply string, err error) {
 		uptime := utils.PrettyDuration(time.Since(state.StartedAt))
 		dbStart := time.Now()
-		err = state.DB.Ping()
+		err = state.DB.Ping(context.Background())
 		if err != nil {
 			return reply, fmt.Errorf("Could not ping database: %w", err)
 		}

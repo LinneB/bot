@@ -7,7 +7,7 @@ import (
 	httpclient "bot/internal/http"
 	"bot/internal/models"
 	"bot/web"
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,7 +19,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/LinneB/twitchwh"
 	irc "github.com/gempir/go-twitch-irc/v4"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -36,7 +36,8 @@ func main() {
 	}
 
 	log.Println("Opening sqlite database")
-	db, err := loadDB(config.DatabasePath)
+	log.Println(config.DatabaseURL)
+	db, err := loadDB(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Could not load DB: %s", err)
 	}
@@ -80,7 +81,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Could not get ID of user: %s", err)
 		}
-		_, err = db.Exec("INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", chat, id)
+		_, err = db.Exec(context.Background(), "INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", chat, id)
 		if err != nil {
 			log.Fatalf("Could not insert to database: %s", err)
 		}
@@ -144,21 +145,21 @@ func main() {
 	}
 }
 
-func loadDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", path))
+func loadDB(connString string) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
-		return nil, fmt.Errorf("Could not open sqlite database: %w", err)
+		return nil, fmt.Errorf("Could not connect to database: %w", err)
 	}
-	err = database.CreateTables(db)
+	err = database.CreateTables(pool)
 	if err != nil {
 		return nil, fmt.Errorf("Could not create required tables: %w", err)
 	}
-	return db, nil
+	return pool, nil
 }
 
 func loadSubscriptions(s *models.State) error {
 	var databaseIDs []int
-	rows, err := s.DB.Query("SELECT subscription_userid FROM subscriptions GROUP BY subscription_userid")
+	rows, err := s.DB.Query(context.Background(), "SELECT subscription_userid FROM subscriptions GROUP BY subscription_userid")
 	if err != nil {
 		return fmt.Errorf("Could not query database: %w", err)
 	}
@@ -204,8 +205,8 @@ func loadSubscriptions(s *models.State) error {
 	return nil
 }
 
-func getChatsFromDatabase(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT chatname FROM chats GROUP BY chatid")
+func getChatsFromDatabase(db *pgxpool.Pool) ([]string, error) {
+	rows, err := db.Query(context.Background(), "SELECT chatname FROM chats GROUP BY chatid")
 	if err != nil {
 		return nil, fmt.Errorf("Could not query database: %w", err)
 	}

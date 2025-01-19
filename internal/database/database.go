@@ -1,11 +1,13 @@
 package database
 
 import (
-	"database/sql"
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CreateTables(db *sql.DB) error {
-	_, err := db.Exec(`
+func CreateTables(db *pgxpool.Pool) error {
+	_, err := db.Exec(context.Background(), `
 CREATE TABLE IF NOT EXISTS chats (
     chatid INTEGER PRIMARY KEY NOT NULL,
     chatname VARCHAR(50) NOT NULL

@@ -5,7 +5,7 @@ import (
 	"bot/internal/helix"
 	"bot/internal/models"
 	"bot/internal/utils"
-	"database/sql"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +16,7 @@ import (
 
 	"github.com/LinneB/twitchwh"
 	irc "github.com/gempir/go-twitch-irc/v4"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx/v5"
 )
 
 func OnMessage(state *models.State) func(irc.PrivateMessage) {
@@ -24,23 +24,23 @@ func OnMessage(state *models.State) func(irc.PrivateMessage) {
 		if !strings.HasPrefix(msg.Message, state.Config.Prefix) {
 			return
 		}
-		context, err := commands.NewContext(state, msg)
+		ctx, err := commands.NewContext(state, msg)
 		if err != nil {
 			log.Printf("Could not create command context: %s", err)
 		}
 
 		// Interactive command
-		command, found := commands.Handler.GetCommandByAlias(context.Invocation)
+		command, found := commands.Handler.GetCommandByAlias(ctx.Invocation)
 		if found {
-			if context.Role < command.Metadata.MinimumRole {
+			if ctx.Role < command.Metadata.MinimumRole {
 				return
 			}
-			if commands.Handler.IsOnCooldown(context.SenderUserID, command.Metadata.Name, command.Metadata.Cooldown) {
+			if commands.Handler.IsOnCooldown(ctx.SenderUserID, command.Metadata.Name, command.Metadata.Cooldown) {
 				return
 			}
-			commands.Handler.SetCooldown(context.SenderUserID, command.Metadata.Name)
+			commands.Handler.SetCooldown(ctx.SenderUserID, command.Metadata.Name)
 			now := time.Now()
-			reply, err := command.Run(state, context)
+			reply, err := command.Run(state, ctx)
 			if err != nil {
 				var ae *models.APIError
 				if errors.As(err, &ae) {
@@ -62,16 +62,16 @@ func OnMessage(state *models.State) func(irc.PrivateMessage) {
 
 		// Static command
 		var reply string
-		err = state.DB.QueryRow("SELECT reply FROM commands WHERE chatid = $1 AND name = $2", context.ChannelID, context.Invocation).Scan(&reply)
-		if err != nil && err != sql.ErrNoRows {
+		err = state.DB.QueryRow(context.Background(), "SELECT reply FROM commands WHERE chatid = $1 AND name = $2", ctx.ChannelID, ctx.Invocation).Scan(&reply)
+		if err != nil && err != pgx.ErrNoRows {
 			log.Printf("Could not query database: %s", err)
 			return
 		}
-		if err != sql.ErrNoRows {
-			if commands.Handler.IsOnCooldown(context.SenderUserID, context.Invocation, 1*time.Second) {
+		if err != pgx.ErrNoRows {
+			if commands.Handler.IsOnCooldown(ctx.SenderUserID, ctx.Invocation, 1*time.Second) {
 				return
 			}
-			commands.Handler.SetCooldown(context.SenderUserID, context.Invocation)
+			commands.Handler.SetCooldown(ctx.SenderUserID, ctx.Invocation)
 			state.IRC.Say(msg.Channel, fmt.Sprintf("@%s, %s", msg.User.Name, reply))
 		}
 	}
@@ -89,7 +89,7 @@ func OnLive(state *models.State) func(twitchwh.StreamOnline) {
 
 		// Get subscribed chats
 		query := "SELECT c.chatname, c.chatid FROM subscriptions su JOIN chats c ON c.chatid = su.chatid WHERE su.subscription_userid = $1"
-		rows, err := state.DB.Query(query, streamUserID)
+		rows, err := state.DB.Query(context.Background(), query, streamUserID)
 		if err != nil {
 			log.Printf("Could not query database: %s", err)
 			return
@@ -106,7 +106,7 @@ func OnLive(state *models.State) func(twitchwh.StreamOnline) {
 		}
 
 		// Get subscribed users
-		rows, err = state.DB.Query(`
+		rows, err = state.DB.Query(context.Background(), `
 SELECT
   c.chatname,
   s.subscriber_username

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bot/internal/models"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ var join = command{
 			}
 			channel := strings.ToLower(ctx.Parameters[0])
 			var chatCount int
-			err = state.DB.QueryRow("SELECT COUNT(*) FROM chats WHERE chatname = ?", channel).Scan(&chatCount)
+			err = state.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM chats WHERE chatname = ?", channel).Scan(&chatCount)
 			if err != nil {
 				return "", fmt.Errorf("Could not query database: %w", err)
 			}
@@ -37,7 +38,7 @@ var join = command{
 			if channelID == nil {
 				return fmt.Sprintf("User %s not found.", channel), nil
 			}
-			_, err = state.DB.Exec("INSERT INTO chats(chatid, chatname) VALUES (?, ?)", channelID, channel)
+			_, err = state.DB.Exec(context.Background(), "INSERT INTO chats(chatid, chatname) VALUES (?, ?)", channelID, channel)
 			if err != nil {
 				return "", fmt.Errorf("Could not insert chat: %w", err)
 			}
@@ -50,7 +51,7 @@ var join = command{
 				if len(ctx.Parameters) < 1 || ctx.Parameters[0] != "DELETEME" {
 					return fmt.Sprintf("This command will part this chat and DELETE all commands and live notifications PERMANENTLY. Use %s DELETEME to confirm.", ctx.Command), nil
 				}
-				_, err := state.DB.Exec("DELETE FROM chats WHERE chatid = ?", ctx.ChannelID)
+				_, err := state.DB.Exec(context.Background(), "DELETE FROM chats WHERE chatid = ?", ctx.ChannelID)
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
 				}
@@ -61,11 +62,11 @@ var join = command{
 					return fmt.Sprintf("Missing channel. Usage: %s <channel>", ctx.Command), nil
 				}
 				channel := strings.ToLower(ctx.Parameters[0])
-				meta, err := state.DB.Exec("DELETE FROM chats WHERE chatname = ?", channel)
+				meta, err := state.DB.Exec(context.Background(), "DELETE FROM chats WHERE chatname = ?", channel)
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
 				}
-				affected, _ := meta.RowsAffected() // err is always nil in go-sqlite3
+				affected := meta.RowsAffected()
 				if affected == 0 {
 					return "Chat not found.", nil
 				}
