@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"bot/models"
+	"bot/internal/models"
 	"cmp"
 	"slices"
 	"strconv"

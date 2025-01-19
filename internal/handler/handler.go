@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"bot/commands"
-	"bot/helix"
-	"bot/models"
-	"bot/utils"
+	"bot/internal/commands"
+	"bot/internal/helix"
+	"bot/internal/models"
+	"bot/internal/utils"
 	"database/sql"
 	"encoding/json"
 	"errors"

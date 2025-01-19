@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"bot/helix"
-	"bot/models"
+	"bot/internal/helix"
+	"bot/internal/models"
 	"encoding/json"
 	"fmt"
 	"time"

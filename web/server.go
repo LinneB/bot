@@ -1,7 +1,7 @@
 package web
 
 import (
-	"bot/commands"
+	"bot/internal/commands"
 	"html/template"
 	"log"
 	"net/http"

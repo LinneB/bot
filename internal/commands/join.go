@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"bot/models"
+	"bot/internal/models"
 	"fmt"
 	"strings"
 	"time"

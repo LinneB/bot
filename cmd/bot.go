@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bot/database"
-	"bot/handler"
-	"bot/helix"
-	httpclient "bot/http"
-	"bot/models"
+	"bot/internal/database"
+	"bot/internal/handler"
+	"bot/internal/helix"
+	httpclient "bot/internal/http"
+	"bot/internal/models"
 	"bot/web"
 	"database/sql"
 	"fmt"

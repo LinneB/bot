@@ -1,8 +1,8 @@
 package models
 
 import (
-	"bot/helix"
-	"bot/http"
+	"bot/internal/helix"
+	"bot/internal/http"
 	"database/sql"
 	"time"
 

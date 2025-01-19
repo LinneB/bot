@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"bot/models"
-	"bot/utils"
+	"bot/internal/models"
+	"bot/internal/utils"
 	"fmt"
 	"runtime"
 	"time"
