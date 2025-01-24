@@ -19,7 +19,7 @@ func (e *ErrorStatus) Error() string {
 	return fmt.Sprintf("Requested resource returned unhandled status code: %d", e.StatusCode)
 }
 
-// Cached wrapper around [Client.GetUser] exclusively for user IDs.
+// Cached wrapper around [GetUser] for user IDs.
 func LoginToID(c http.Client, login string) (userid int, found bool, err error) {
 	if id, found := userIDCache[login]; found {
 		return id, true, nil
