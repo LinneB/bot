@@ -1,9 +1,9 @@
 package commands
 
 import (
+	"bot/internal/database"
 	"bot/internal/helix"
 	"bot/internal/models"
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -23,12 +23,12 @@ var join = command{
 				return fmt.Sprintf("Missing channel. Usage: %s <channel>", ctx.Command), nil
 			}
 			channel := strings.ToLower(ctx.Parameters[0])
-			var chatCount int
-			err = state.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM chats WHERE chatname = ?", channel).Scan(&chatCount)
+
+			_, found, err := database.GetChatByName(state.DB, channel)
 			if err != nil {
 				return "", fmt.Errorf("Could not query database: %w", err)
 			}
-			if chatCount > 0 {
+			if found {
 				return "Chat is already joined.", nil
 			}
 
@@ -39,7 +39,11 @@ var join = command{
 			if !found {
 				return fmt.Sprintf("User %s not found.", channel), nil
 			}
-			_, err = state.DB.Exec(context.Background(), "INSERT INTO chats(chatid, chatname) VALUES (?, ?)", channelID, channel)
+
+			err = database.InsertChat(state.DB, models.Chat{
+				ChatID:   channelID,
+				ChatName: channel,
+			})
 			if err != nil {
 				return "", fmt.Errorf("Could not insert chat: %w", err)
 			}
@@ -52,7 +56,7 @@ var join = command{
 				if len(ctx.Parameters) < 1 || ctx.Parameters[0] != "DELETEME" {
 					return fmt.Sprintf("This command will part this chat and DELETE all commands and live notifications PERMANENTLY. Use %s DELETEME to confirm.", ctx.Command), nil
 				}
-				_, err := state.DB.Exec(context.Background(), "DELETE FROM chats WHERE chatid = ?", ctx.ChannelID)
+				err := database.DeleteChat(state.DB, ctx.ChannelID)
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
 				}
@@ -63,13 +67,16 @@ var join = command{
 					return fmt.Sprintf("Missing channel. Usage: %s <channel>", ctx.Command), nil
 				}
 				channel := strings.ToLower(ctx.Parameters[0])
-				meta, err := state.DB.Exec(context.Background(), "DELETE FROM chats WHERE chatname = ?", channel)
+				chat, found, err := database.GetChatByName(state.DB, channel)
+				if err != nil {
+					return "", fmt.Errorf("Could not query database: %w", err)
+				}
+				if !found {
+					return "Chat not found.", nil
+				}
+				err = database.DeleteChat(state.DB, chat.ChatID)
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
-				}
-				affected := meta.RowsAffected()
-				if affected == 0 {
-					return "Chat not found.", nil
 				}
 				state.IRC.Depart(channel)
 				return fmt.Sprintf("Leaving chat %s.", channel), nil

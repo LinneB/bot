@@ -73,14 +73,20 @@ func main() {
 	)
 
 	// Get chats from database
-	chats, err := getChatsFromDatabase(db)
+	chats, err := database.GetChats(db)
 	if err != nil {
 		log.Fatalf("Could not get chats from database: %s", err)
 	}
 	if len(chats) > 0 {
 		log.Printf("Found %d chat(s) in database. Joining...", len(chats))
-		ircClient.Join(chats...)
+		// Go please give me slices.Map ;)
+		chatNames := make([]string, len(chats))
+		for _, chat := range chats {
+			chatNames = append(chatNames, chat.ChatName)
+		}
+		ircClient.Join(chatNames...)
 	} else {
+		// Load channel from config file
 		log.Println("No chats found in database, checking config file")
 		if config.InitialChannel == "" {
 			log.Fatal("No channels found in database or config")
@@ -93,7 +99,10 @@ func main() {
 		if !found {
 			log.Fatalf("Could not find user %s", chat)
 		}
-		_, err = db.Exec(context.Background(), "INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", chat, id)
+		err = database.InsertChat(db, models.Chat{
+			ChatID:   id,
+			ChatName: chat,
+		})
 		if err != nil {
 			log.Fatalf("Could not insert to database: %s", err)
 		}
