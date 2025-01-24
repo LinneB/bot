@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     chatid INTEGER NOT NULL,
     subscription_username VARCHAR(50) NOT NULL,
     subscription_userid INTEGER NOT NULL,
-    subscription_id INTEGER PRIMARY KEY,
+    subscription_id SERIAL NOT NULL,
+    PRIMARY KEY (subscription_id),
     CONSTRAINT fk_chats FOREIGN KEY (chatid) REFERENCES chats (chatid) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS subscribers (

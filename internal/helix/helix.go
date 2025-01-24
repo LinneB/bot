@@ -70,6 +70,36 @@ func (c *Client) GetUser(login string) (user *User, err error) {
 	}
 }
 
+func (c *Client) GetStream(name string) (*Stream, error) {
+	req, err := c.NewRequest("GET", "/streams?user_login="+name)
+	if err != nil {
+		return nil, err
+	}
+	res, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		return nil, &ErrorStatus{
+			res.StatusCode,
+		}
+	}
+
+	var responseStruct struct {
+		Data []Stream
+	}
+	err = json.NewDecoder(res.Body).Decode(&responseStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(responseStruct.Data) > 0 {
+		return &responseStruct.Data[0], nil
+	} else {
+		return nil, nil
+	}
+}
+
 func (c *Client) NewRequest(method string, endpoint string) (*http.Request, error) {
 	req, err := http.NewRequest(method, c.HelixURL+endpoint, nil)
 	if err != nil {
