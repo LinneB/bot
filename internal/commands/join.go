@@ -56,7 +56,10 @@ var join = command{
 				if len(ctx.Parameters) < 1 || ctx.Parameters[0] != "DELETEME" {
 					return fmt.Sprintf("This command will part this chat and DELETE all commands and live notifications PERMANENTLY. Use %s DELETEME to confirm.", ctx.Command), nil
 				}
-				err := database.DeleteChat(state.DB, ctx.ChannelID)
+				err := database.DeleteChat(state.DB, models.Chat{
+					ChatID:   ctx.ChannelID,
+					ChatName: ctx.ChannelName,
+				})
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
 				}
@@ -74,7 +77,7 @@ var join = command{
 				if !found {
 					return "Chat not found.", nil
 				}
-				err = database.DeleteChat(state.DB, chat.ChatID)
+				err = database.DeleteChat(state.DB, chat)
 				if err != nil {
 					return "", fmt.Errorf("Could not delete from database: %w", err)
 				}
