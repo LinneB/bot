@@ -2,6 +2,7 @@ package web
 
 import (
 	"bot/internal/commands"
+	"embed"
 	"html/template"
 	"log"
 	"net/http"
@@ -31,12 +32,15 @@ func Logging(next http.Handler) http.Handler {
 	})
 }
 
+//go:embed public
+var fs embed.FS
+
 func New(addr string) (*http.ServeMux, error) {
-	tmplCommand, err := template.ParseFiles("./web/public/command.tmpl")
+	tmplCommand, err := template.ParseFS(fs, "public/command.tmpl")
 	if err != nil {
 		return nil, err
 	}
-	tmplIndex, err := template.ParseFiles("./web/public/index.tmpl")
+	tmplIndex, err := template.ParseFS(fs, "public/index.tmpl")
 	if err != nil {
 		return nil, err
 	}
