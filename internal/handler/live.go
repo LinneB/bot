@@ -5,15 +5,21 @@ import (
 	"bot/internal/helix"
 	"bot/internal/models"
 	"bot/internal/utils"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
-
-	"github.com/LinneB/twitchwh"
 )
 
-func OnLive(state *models.State) func(twitchwh.StreamOnline) {
-	return func(event twitchwh.StreamOnline) {
+func OnLive(state *models.State) func(rawEvent json.RawMessage) {
+	return func(rawEvent json.RawMessage) {
+		var event struct {
+			BroadcasterUserID    string `json:"broadcaster_user_id"`
+			BroadcasterUserLogin string `json:"broadcaster_user_login"`
+		}
+		if err := json.Unmarshal(rawEvent, &event); err != nil {
+			log.Printf("Could not unmarshal event: %s", err)
+		}
 		streamUserID, err := strconv.Atoi(event.BroadcasterUserID)
 		if err != nil {
 			log.Printf("UserID \"%s\" is not convertable to int: %s", event.BroadcasterUserID, err)

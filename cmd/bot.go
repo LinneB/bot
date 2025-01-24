@@ -133,11 +133,7 @@ func main() {
 	ircClient.OnPrivateMessage(handler.OnMessage(&state))
 	ircClient.OnConnect(func() { log.Println("Connected to chat") })
 
-	whClient.OnStreamOnline = handler.OnLive(&state)
-	err = loadSubscriptions(&state)
-	if err != nil {
-		log.Fatalf("Could not load eventsub subscriptions: %s", err)
-	}
+	whClient.On("stream.online", handler.OnLive(&state))
 
 	log.Println("Starting web server")
 	router, err := web.New(config.BindAddr)
@@ -154,6 +150,12 @@ func main() {
 			log.Fatalf("Could not start http server: %s", err)
 		}
 	}()
+
+	// Load subscriptions after the HTTP server is started, so we can receive the challenge request
+	err = loadSubscriptions(&state)
+	if err != nil {
+		log.Fatalf("Could not load eventsub subscriptions: %s", err)
+	}
 
 	if err := ircClient.Connect(); err != nil {
 		log.Fatalf("Twitch chat connection failed: %s", err)

@@ -4,7 +4,7 @@ go 1.22.6
 
 require (
 	github.com/BurntSushi/toml v1.4.0
-	github.com/LinneB/twitchwh v0.0.5
+	github.com/LinneB/twitchwh v0.1.0
 	github.com/gempir/go-twitch-irc/v4 v4.0.0
 	github.com/jackc/pgx/v5 v5.7.2
 )
