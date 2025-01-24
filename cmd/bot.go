@@ -41,15 +41,25 @@ func main() {
 		log.Fatalf("Could not load DB: %s", err)
 	}
 
-	log.Println("Creating Helix client")
-	helix := helix.Client{
-		ClientID:    config.Identity.ClientID,
-		HelixURL:    "https://api.twitch.tv/helix",
-		HttpClient:  &http.Client{},
-		Token:       config.Identity.HelixToken,
-		UserIDCache: make(map[string]int),
+	log.Println("Creating HTTP client")
+	httpClient := httpclient.Client{
+		Client: &http.Client{},
+		DefaultHeaders: map[string]string{
+			"User-Agent": "LinneB/bot (https://github.com/LinneB/bot)",
+		},
+		URLHeaders: map[string]map[string]string{
+			"api.twitch.tv": {
+				"Client-ID":     config.Identity.ClientID,
+				"Authorization": fmt.Sprintf("Bearer %s", config.Identity.HelixToken),
+			},
+			"id.twitch.tv": {
+				"Authorization": fmt.Sprintf("Bearer %s", config.Identity.HelixToken),
+			},
+		},
 	}
-	valid, err := helix.ValidateToken()
+
+	log.Println("Validating Helix token")
+	valid, err := helix.ValidateToken(httpClient)
 	if err != nil {
 		log.Fatalf("Could not validate Helix token: %s", err)
 	}
@@ -76,9 +86,12 @@ func main() {
 			log.Fatal("No channels found in database or config")
 		}
 		chat := strings.ToLower(config.InitialChannel)
-		id, err := helix.LoginToID(chat)
+		id, found, err := helix.LoginToID(httpClient, chat)
 		if err != nil {
 			log.Fatalf("Could not get ID of user: %s", err)
+		}
+		if !found {
+			log.Fatalf("Could not find user %s", chat)
 		}
 		_, err = db.Exec(context.Background(), "INSERT INTO chats (chatname, chatid) VALUES ($1, $2)", chat, id)
 		if err != nil {
@@ -100,15 +113,9 @@ func main() {
 	}
 
 	state := models.State{
-		Config: config,
-		DB:     db,
-		Helix:  helix,
-		Http: httpclient.Client{
-			Client: &http.Client{},
-			DefaultHeaders: map[string]string{
-				"User-Agent": "LinneB/bot (https://github.com/LinneB/bot)",
-			},
-		},
+		Config:    config,
+		DB:        db,
+		Http:      httpClient,
 		IRC:       ircClient,
 		StartedAt: startedAt,
 		TwitchWH:  whClient,

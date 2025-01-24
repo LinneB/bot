@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bot/internal/database"
+	"bot/internal/helix"
 	"bot/internal/models"
 	"bot/internal/utils"
 	"fmt"
@@ -42,14 +43,14 @@ func OnLive(state *models.State) func(twitchwh.StreamOnline) {
 		}
 
 		// Get stream information
-		stream, err := state.Helix.GetStream(event.BroadcasterUserLogin)
+		stream, found, err := helix.GetStream(state.Http, event.BroadcasterUserLogin)
 		if err != nil {
 			log.Printf("Could not get stream information: %s", err)
 			return
 		}
 
 		var liveMessage string
-		if stream != nil {
+		if found {
 			if stream.GameName != "" {
 				liveMessage = fmt.Sprintf("https://twitch.tv/%s just went live playing %s! \"%s\"", stream.UserLogin, stream.GameName, stream.Title)
 			} else {

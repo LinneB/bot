@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bot/internal/helix"
 	"bot/internal/http"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 type State struct {
 	Config    Config
 	DB        *pgxpool.Pool
-	Helix     helix.Client
 	Http      http.Client
 	IRC       *irc.Client
 	StartedAt time.Time

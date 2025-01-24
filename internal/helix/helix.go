@@ -1,50 +1,51 @@
 package helix
 
 import (
+	"bot/internal/http"
+	"bot/internal/models"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 )
 
-type Client struct {
-	ClientID   string
-	HelixURL   string
-	HttpClient *http.Client
-	Token      string
+var helixURL = "https://api.twitch.tv/helix"
+var userIDCache = make(map[string]int)
 
-	UserIDCache map[string]int
+type ErrorStatus struct {
+	StatusCode int
+}
+
+func (e *ErrorStatus) Error() string {
+	return fmt.Sprintf("Requested resource returned unhandled status code: %d", e.StatusCode)
 }
 
 // Cached wrapper around [Client.GetUser] exclusively for user IDs.
-// Return value is nil if the user is not found.
-func (c *Client) LoginToID(login string) (*int, error) {
-	if id, found := c.UserIDCache[login]; found {
-		return &id, nil
+func LoginToID(c http.Client, login string) (userid int, found bool, err error) {
+	if id, found := userIDCache[login]; found {
+		return id, true, nil
 	}
-	user, err := c.GetUser(login)
+	user, err := GetUser(c, login)
 	if err != nil {
-		return nil, err
+		return 0, false, err
 	}
 	if user != nil {
 		id, err := strconv.Atoi(user.Id)
 		if err != nil {
-			return nil, err
+			return 0, false, err
 		}
-		c.UserIDCache[login] = id
-		return &id, nil
+		userIDCache[login] = id
+		return id, true, nil
 	}
-	return nil, nil
+	return 0, false, nil
 }
 
 // Attempts to fetch a user using the /users endpoint.
 // Returns nil if user was not found.
-func (c *Client) GetUser(login string) (user *User, err error) {
-	req, err := c.NewRequest("GET", "/users?login="+login)
-	if err != nil {
-		return nil, err
-	}
-	res, err := c.HttpClient.Do(req)
+func GetUser(c http.Client, login string) (user *models.HelixUser, err error) {
+	res, err := c.GenericRequest(http.Request{
+		Method: "GET",
+		URL:    helixURL + "/users?login=" + login,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +54,8 @@ func (c *Client) GetUser(login string) (user *User, err error) {
 			res.StatusCode,
 		}
 	}
-
 	var responseStruct struct {
-		Data []User
+		Data []models.HelixUser
 	}
 	decoder := json.NewDecoder(res.Body)
 	err = decoder.Decode(&responseStruct)
@@ -70,60 +70,43 @@ func (c *Client) GetUser(login string) (user *User, err error) {
 	}
 }
 
-func (c *Client) GetStream(name string) (*Stream, error) {
-	req, err := c.NewRequest("GET", "/streams?user_login="+name)
+func GetStream(c http.Client, name string) (stream models.HelixStream, found bool, err error) {
+	res, err := c.GenericRequest(http.Request{
+		Method: "GET",
+		URL:    helixURL + "/streams?user_login=" + name,
+	})
 	if err != nil {
-		return nil, err
-	}
-	res, err := c.HttpClient.Do(req)
-	if err != nil {
-		return nil, err
+		return models.HelixStream{}, false, err
 	}
 	if res.StatusCode != 200 {
-		return nil, &ErrorStatus{
+		return models.HelixStream{}, false, &ErrorStatus{
 			res.StatusCode,
 		}
 	}
 
 	var responseStruct struct {
-		Data []Stream
+		Data []models.HelixStream
 	}
 	err = json.NewDecoder(res.Body).Decode(&responseStruct)
 	if err != nil {
-		return nil, err
+		return models.HelixStream{}, false, err
 	}
 
 	if len(responseStruct.Data) > 0 {
-		return &responseStruct.Data[0], nil
+		return responseStruct.Data[0], true, nil
 	} else {
-		return nil, nil
+		return models.HelixStream{}, false, nil
 	}
 }
 
-func (c *Client) NewRequest(method string, endpoint string) (*http.Request, error) {
-	req, err := http.NewRequest(method, c.HelixURL+endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
-	req.Header.Set("Client-ID", c.ClientID)
-	return req, nil
-}
-
-func (c *Client) ValidateToken() (bool, error) {
-	url := "https://id.twitch.tv/oauth2/validate"
-	req, err := http.NewRequest("GET", url, nil)
+func ValidateToken(c http.Client) (bool, error) {
+	res, err := c.GenericRequest(http.Request{
+		Method: "GET",
+		URL:    "https://id.twitch.tv/oauth2/validate",
+	})
 	if err != nil {
 		return false, err
 	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
-
-	res, err := c.HttpClient.Do(req)
-	if err != nil {
-		return false, err
-	}
-
 	if res.StatusCode == 200 {
 		return true, nil
 	} else {

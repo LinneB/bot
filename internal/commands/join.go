@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bot/internal/helix"
 	"bot/internal/models"
 	"context"
 	"fmt"
@@ -31,11 +32,11 @@ var join = command{
 				return "Chat is already joined.", nil
 			}
 
-			channelID, err := state.Helix.LoginToID(channel)
+			channelID, found, err := helix.LoginToID(state.Http, channel)
 			if err != nil {
 				return "", fmt.Errorf("Could not get user: %w", err)
 			}
-			if channelID == nil {
+			if !found {
 				return fmt.Sprintf("User %s not found.", channel), nil
 			}
 			_, err = state.DB.Exec(context.Background(), "INSERT INTO chats(chatid, chatname) VALUES (?, ?)", channelID, channel)

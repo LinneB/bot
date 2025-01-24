@@ -1,12 +1,11 @@
-package helix
+package models
 
 import (
-	"fmt"
 	"time"
 )
 
 // User returned from the /users endpoint
-type User struct {
+type HelixUser struct {
 	Id          string `json:"id"`
 	Login       string `json:"login"`
 	DisplayName string `json:"display_name"`
@@ -25,7 +24,7 @@ type User struct {
 }
 
 // Stream returned from the /streams endpoint
-type Stream struct {
+type HelixStream struct {
 	ID           string    `json:"id"`
 	UserID       string    `json:"user_id"`
 	UserLogin    string    `json:"user_login"`
@@ -40,12 +39,4 @@ type Stream struct {
 	Language     string    `json:"language"`
 	ThumbnailURL string    `json:"thumbnail_url"`
 	IsMature     bool      `json:"is_mature"`
-}
-
-type ErrorStatus struct {
-	StatusCode int
-}
-
-func (e *ErrorStatus) Error() string {
-	return fmt.Sprintf("Requested resource returned unhandled status code: %d", e.StatusCode)
 }

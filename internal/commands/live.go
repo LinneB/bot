@@ -3,8 +3,9 @@ package commands
 import (
 	"bot/internal/helix"
 	"bot/internal/models"
-	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -13,42 +14,24 @@ var live = command{
 		if len(ctx.Parameters) < 1 {
 			return fmt.Sprintf("Missing argument: %s <channel>.", ctx.Command), nil
 		}
-		channel := ctx.Parameters[0]
-		req, err := state.Helix.NewRequest("GET", "/streams?user_login="+channel)
-		if err != nil {
-			return "", fmt.Errorf("Could not create request: %w", err)
-		}
-		res, err := state.Helix.HttpClient.Do(req)
-		if err != nil {
-			return "", &models.APIError{
-				URL: req.URL,
-				Err: err,
-			}
-		}
-		if res.StatusCode == 400 {
-			return fmt.Sprintf("User %s not found.", channel), nil
-		}
-		if res.StatusCode != 200 {
-			return "", &models.APIError{
-				URL:    req.URL,
-				Status: res.StatusCode,
-				Err:    err,
-			}
-		}
 
-		decoder := json.NewDecoder(res.Body)
-		var responseStruct struct {
-			Data []helix.Stream `json:"data"`
-		}
-		err = decoder.Decode(&responseStruct)
+		channel := strings.ToLower(ctx.Parameters[0])
+		stream, found, err := helix.GetStream(state.Http, channel)
 		if err != nil {
-			return "", fmt.Errorf("Could not parse json body: %w", err)
+			var stErr *helix.ErrorStatus
+			if errors.As(err, &stErr) {
+				if stErr.StatusCode == 400 {
+					return fmt.Sprintf("User %s not found.", channel), nil
+				} else {
+					return "", fmt.Errorf("Unhandled status code: %d", stErr.StatusCode)
+				}
+			}
+			return "", fmt.Errorf("Could not send request: %w", err)
 		}
-
-		if len(responseStruct.Data) < 1 {
+		if !found {
 			return fmt.Sprintf("%s is offline.", channel), nil
 		}
-		stream := responseStruct.Data[0]
+
 		liveDuration := time.Since(stream.StartedAt)
 		hours := int(liveDuration.Hours())
 		minutes := int(liveDuration.Minutes()) % 60
