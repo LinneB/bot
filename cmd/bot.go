@@ -35,8 +35,7 @@ func main() {
 		log.Fatalf("Could not read and parse config file: %s", err)
 	}
 
-	log.Println("Opening sqlite database")
-	log.Println(config.DatabaseURL)
+	log.Println("Creating PostgreSQL pool")
 	db, err := loadDB(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Could not load DB: %s", err)
