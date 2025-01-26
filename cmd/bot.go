@@ -175,19 +175,15 @@ func loadDB(connString string) (*pgxpool.Pool, error) {
 }
 
 func loadSubscriptions(s *models.State) error {
-	var databaseIDs []int
-	rows, err := s.DB.Query(context.Background(), "SELECT subscription_userid FROM subscriptions GROUP BY subscription_userid")
+	subs, err := database.GetSubscriptions(s.DB)
 	if err != nil {
-		return fmt.Errorf("Could not query database: %w", err)
+		return fmt.Errorf("Could not get subscriptions: %w", err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		err := rows.Scan(&id)
-		if err != nil {
-			return fmt.Errorf("Could not scan row: %w", err)
+	var databaseIDs []int
+	for _, sub := range subs {
+		if !slices.Contains(databaseIDs, sub.SubscriptionUserID) {
+			databaseIDs = append(databaseIDs, sub.SubscriptionUserID)
 		}
-		databaseIDs = append(databaseIDs, id)
 	}
 
 	var activeIDs []int

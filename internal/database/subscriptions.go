@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func GetSubscriptions(db *pgxpool.Pool) ([]models.Subscription, error) {
+	var subscriptions []models.Subscription
+	rows, err := db.Query(context.Background(), "SELECT * FROM subscriptions")
+	if err != nil {
+		return nil, err
+	}
+	subscriptions, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.Subscription])
+	return subscriptions, err
+}
+
 // Get all chats that have a subscription to streamUserID.
 func GetSubscribedChats(db *pgxpool.Pool, streamUserID int) ([]models.Chat, error) {
 	var chats []models.Chat
