@@ -4,6 +4,7 @@ import (
 	"bot/internal/commands"
 	"embed"
 	"html/template"
+	FS "io/fs"
 	"log"
 	"net/http"
 	"time"
@@ -66,7 +67,9 @@ func New(addr string) (*http.ServeMux, error) {
 			return
 		}
 	})
-	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./web/public/static"))))
+
+	staticFS, _ := FS.Sub(fs, "public/static")
+	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFS)))
 
 	return router, nil
 }
