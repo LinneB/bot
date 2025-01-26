@@ -221,20 +221,3 @@ func loadSubscriptions(s *models.State) error {
 	}
 	return nil
 }
-
-func getChatsFromDatabase(db *pgxpool.Pool) ([]string, error) {
-	rows, err := db.Query(context.Background(), "SELECT chatname FROM chats GROUP BY chatid")
-	if err != nil {
-		return nil, fmt.Errorf("Could not query database: %w", err)
-	}
-	var chats []string
-	for rows.Next() {
-		var chat string
-		err := rows.Scan(&chat)
-		if err != nil {
-			return nil, fmt.Errorf("Could not scan row: %w", err)
-		}
-		chats = append(chats, chat)
-	}
-	return chats, nil
-}
