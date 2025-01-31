@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bot/internal/models"
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,5 +35,8 @@ CREATE TABLE IF NOT EXISTS commands (
     CONSTRAINT fk_chats FOREIGN KEY (chatid) REFERENCES chats (chatid) ON DELETE CASCADE
 );
     `)
-	return err
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
 }

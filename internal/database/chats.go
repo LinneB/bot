@@ -12,11 +12,11 @@ import (
 func GetChats(db *pgxpool.Pool) ([]models.Chat, error) {
 	rows, err := db.Query(context.Background(), "SELECT chatid, chatname FROM chats")
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	chats, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Chat])
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	return chats, nil
 }
@@ -29,17 +29,23 @@ func GetChatByName(db *pgxpool.Pool, chatname string) (models.Chat, bool, error)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Chat{}, false, nil
 		}
-		return models.Chat{}, false, err
+		return models.Chat{}, false, models.NewDatabaseError(err)
 	}
 	return chat, true, nil
 }
 
 func DeleteChat(db *pgxpool.Pool, chat models.Chat) error {
 	_, err := db.Exec(context.Background(), "DELETE FROM chats WHERE chatid = $1", chat.ChatID)
-	return err
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
 }
 
 func InsertChat(db *pgxpool.Pool, chat models.Chat) error {
 	_, err := db.Exec(context.Background(), "INSERT INTO chats (chatid, chatname) VALUES ($1, $2)", chat.ChatID, chat.ChatName)
-	return err
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
 }

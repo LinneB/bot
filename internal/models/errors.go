@@ -40,3 +40,20 @@ func (se *SystemError) Error() string {
 func (se *SystemError) Unwrap() error {
 	return se.Err
 }
+
+// DatabaseError is a generic error type for database errors.
+type DatabaseError struct {
+	Err error
+}
+
+func NewDatabaseError(err error) *DatabaseError {
+	return &DatabaseError{Err: err}
+}
+
+func (de *DatabaseError) Error() string {
+	return fmt.Sprintf("database error: %s", de.Err)
+}
+
+func (de *DatabaseError) Unwrap() error {
+	return de.Err
+}

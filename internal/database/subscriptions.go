@@ -12,10 +12,13 @@ func GetSubscriptions(db *pgxpool.Pool) ([]models.Subscription, error) {
 	var subscriptions []models.Subscription
 	rows, err := db.Query(context.Background(), "SELECT * FROM subscriptions")
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	subscriptions, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.Subscription])
-	return subscriptions, err
+	if err != nil {
+		return nil, models.NewDatabaseError(err)
+	}
+	return subscriptions, nil
 }
 
 // Get all chats that have a subscription to streamUserID.
@@ -27,11 +30,11 @@ FROM subscriptions su
 JOIN chats c ON c.chatid = su.chatid
 WHERE su.subscription_userid = $1`, streamUserID)
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	chats, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.Chat])
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	return chats, nil
 }
@@ -51,13 +54,13 @@ FROM
 WHERE
   su.subscription_userid = $1;`, streamUserID)
 	if err != nil {
-		return nil, err
+		return nil, models.NewDatabaseError(err)
 	}
 	for rows.Next() {
 		var chatname, subscriber string
 		err := rows.Scan(&chatname, &subscriber)
 		if err != nil {
-			return nil, err
+			return nil, models.NewDatabaseError(err)
 		}
 		subscribers[chatname] = append(subscribers[chatname], subscriber)
 	}

@@ -18,17 +18,23 @@ func GetCommand(db *pgxpool.Pool, chatid int, name string) (models.Command, bool
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Command{}, false, nil
 		}
-		return models.Command{}, false, err
+		return models.Command{}, false, models.NewDatabaseError(err)
 	}
 	return cmd, true, nil
 }
 
 func CreateCommand(db *pgxpool.Pool, cmd models.Command) error {
 	_, err := db.Exec(context.Background(), "INSERT INTO commands (chatid, name, reply) VALUES ($1, $2, $3)", cmd.ChatID, cmd.Name, cmd.Reply)
-	return err
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
 }
 
 func DeleteCommand(db *pgxpool.Pool, cmd models.Command) error {
 	_, err := db.Exec(context.Background(), "DELETE FROM commands WHERE chatid = $1 AND name = $2", cmd.ChatID, cmd.Name)
-	return err
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
 }
