@@ -192,6 +192,7 @@ var Handler *handler
 func init() {
 	Handler = &handler{
 		Commands: []command{
+			banned,
 			help,
 			join,
 			live,
