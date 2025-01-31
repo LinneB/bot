@@ -196,6 +196,7 @@ func init() {
 			cmd,
 			followers,
 			help,
+			id,
 			join,
 			live,
 			notify,
