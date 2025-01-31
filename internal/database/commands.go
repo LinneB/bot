@@ -38,3 +38,12 @@ func DeleteCommand(db *pgxpool.Pool, cmd models.Command) error {
 	}
 	return nil
 }
+
+// Update the reply of a command.
+func UpdateCommand(db *pgxpool.Pool, cmd models.Command, newReply string) error {
+	_, err := db.Exec(context.Background(), "UPDATE commands SET reply = $1 WHERE chatid = $2 AND name = $3", newReply, cmd.ChatID, cmd.Name)
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
+}
