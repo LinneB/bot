@@ -204,6 +204,7 @@ func init() {
 			ping,
 			randomEmote,
 			subscribe,
+			thumbnail,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
 	}
