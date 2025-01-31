@@ -198,6 +198,7 @@ func init() {
 			help,
 			id,
 			join,
+			latestEmotes,
 			live,
 			notify,
 			ping,
