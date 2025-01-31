@@ -18,6 +18,15 @@ type Request struct {
 	URL    string
 }
 
+// Return the URL as a parsed [*url.URL]. Panics if the URL is invalid.
+func (c *Request) Url() *url.URL {
+	url, err := url.Parse(c.URL)
+	if err != nil {
+		panic(err)
+	}
+	return url
+}
+
 func (c *Client) GenericRequest(r Request) (res *http.Response, err error) {
 	url, err := url.Parse(r.URL)
 	if err != nil {

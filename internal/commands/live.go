@@ -18,15 +18,13 @@ var live = command{
 		channel := strings.ToLower(ctx.Parameters[0])
 		stream, found, err := helix.GetStream(state.Http, channel)
 		if err != nil {
-			var stErr *helix.ErrorStatus
-			if errors.As(err, &stErr) {
-				if stErr.StatusCode == 400 {
+			var ae *models.APIError
+			if errors.As(err, &ae) {
+				if ae.Status == 400 {
 					return fmt.Sprintf("User %s not found.", channel), nil
-				} else {
-					return "", fmt.Errorf("Unhandled status code: %d", stErr.StatusCode)
 				}
 			}
-			return "", fmt.Errorf("Could not send request: %w", err)
+			return "", err
 		}
 		if !found {
 			return fmt.Sprintf("%s is offline.", channel), nil

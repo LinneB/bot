@@ -23,3 +23,20 @@ func (ae *APIError) Error() string {
 func (ae *APIError) Unwrap() error {
 	return ae.Err
 }
+
+// SystemError is a generic error type, for boring things like HTTP or JSON parsing, etc.
+type SystemError struct {
+	Err error
+}
+
+func NewSystemError(err error) *SystemError {
+	return &SystemError{Err: err}
+}
+
+func (se *SystemError) Error() string {
+	return fmt.Sprintf("System Error: %s", se.Err)
+}
+
+func (se *SystemError) Unwrap() error {
+	return se.Err
+}

@@ -4,31 +4,22 @@ import (
 	"bot/internal/http"
 	"bot/internal/models"
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
 var helixURL = "https://api.twitch.tv/helix"
 var userIDCache = make(map[string]int)
 
-type ErrorStatus struct {
-	StatusCode int
-}
-
-func (e *ErrorStatus) Error() string {
-	return fmt.Sprintf("Requested resource returned unhandled status code: %d", e.StatusCode)
-}
-
 // Cached wrapper around [GetUser] for user IDs.
 func LoginToID(c http.Client, login string) (userid int, found bool, err error) {
 	if id, found := userIDCache[login]; found {
 		return id, true, nil
 	}
-	user, err := GetUser(c, login)
+	user, found, err := GetUser(c, login)
 	if err != nil {
 		return 0, false, err
 	}
-	if user != nil {
+	if found {
 		id, err := strconv.Atoi(user.Id)
 		if err != nil {
 			return 0, false, err
@@ -40,18 +31,23 @@ func LoginToID(c http.Client, login string) (userid int, found bool, err error) 
 }
 
 // Attempts to fetch a user using the /users endpoint.
-// Returns nil if user was not found.
-func GetUser(c http.Client, login string) (user *models.HelixUser, err error) {
-	res, err := c.GenericRequest(http.Request{
+// Returned "found" value is false if the user doesn't exist.
+func GetUser(c http.Client, login string) (user models.HelixUser, found bool, err error) {
+	req := http.Request{
 		Method: "GET",
 		URL:    helixURL + "/users?login=" + login,
-	})
+	}
+	res, err := c.GenericRequest(req)
 	if err != nil {
-		return nil, err
+		return models.HelixUser{}, false, &models.APIError{
+			URL: req.Url(),
+			Err: err,
+		}
 	}
 	if res.StatusCode != 200 {
-		return nil, &ErrorStatus{
-			res.StatusCode,
+		return models.HelixUser{}, false, &models.APIError{
+			Status: res.StatusCode,
+			URL:    req.Url(),
 		}
 	}
 	var responseStruct struct {
@@ -60,27 +56,35 @@ func GetUser(c http.Client, login string) (user *models.HelixUser, err error) {
 	decoder := json.NewDecoder(res.Body)
 	err = decoder.Decode(&responseStruct)
 	if err != nil {
-		return nil, err
+		return models.HelixUser{}, false, models.NewSystemError(err)
 	}
 
 	if len(responseStruct.Data) > 0 {
-		return &responseStruct.Data[0], nil
+		return responseStruct.Data[0], true, nil
 	} else {
-		return nil, nil
+		return models.HelixUser{}, false, nil
 	}
 }
 
+// Attempts to fetch a stream using the /streams endpoint.
+// Returned "found" value is false if the user exists, but is offline.
+// Throws [models.APIError] with a 400 status if the user doesn't exist.
 func GetStream(c http.Client, name string) (stream models.HelixStream, found bool, err error) {
-	res, err := c.GenericRequest(http.Request{
+	req := http.Request{
 		Method: "GET",
 		URL:    helixURL + "/streams?user_login=" + name,
-	})
+	}
+	res, err := c.GenericRequest(req)
 	if err != nil {
-		return models.HelixStream{}, false, err
+		return models.HelixStream{}, false, &models.APIError{
+			URL: req.Url(),
+			Err: err,
+		}
 	}
 	if res.StatusCode != 200 {
-		return models.HelixStream{}, false, &ErrorStatus{
-			res.StatusCode,
+		return models.HelixStream{}, false, &models.APIError{
+			Status: res.StatusCode,
+			URL:    req.Url(),
 		}
 	}
 
@@ -89,7 +93,7 @@ func GetStream(c http.Client, name string) (stream models.HelixStream, found boo
 	}
 	err = json.NewDecoder(res.Body).Decode(&responseStruct)
 	if err != nil {
-		return models.HelixStream{}, false, err
+		return models.HelixStream{}, false, models.NewSystemError(err)
 	}
 
 	if len(responseStruct.Data) > 0 {
