@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var helixURL = "https://api.twitch.tv/helix"
+var HelixURL = "https://api.twitch.tv/helix"
 var userIDCache = make(map[string]int)
 
 // Cached wrapper around [GetUser] for user IDs.
@@ -35,7 +35,7 @@ func LoginToID(c http.Client, login string) (userid int, found bool, err error) 
 func GetUser(c http.Client, login string) (user models.HelixUser, found bool, err error) {
 	req := http.Request{
 		Method: "GET",
-		URL:    helixURL + "/users?login=" + login,
+		URL:    HelixURL + "/users?login=" + login,
 	}
 	res, err := c.GenericRequest(req)
 	if err != nil {
@@ -72,7 +72,7 @@ func GetUser(c http.Client, login string) (user models.HelixUser, found bool, er
 func GetStream(c http.Client, name string) (stream models.HelixStream, found bool, err error) {
 	req := http.Request{
 		Method: "GET",
-		URL:    helixURL + "/streams?user_login=" + name,
+		URL:    HelixURL + "/streams?user_login=" + name,
 	}
 	res, err := c.GenericRequest(req)
 	if err != nil {

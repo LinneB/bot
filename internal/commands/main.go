@@ -194,6 +194,7 @@ func init() {
 		Commands: []command{
 			banned,
 			cmd,
+			followers,
 			help,
 			join,
 			live,
