@@ -1,8 +1,10 @@
 package web
 
 import (
-	"bot/commands"
+	"bot/internal/commands"
+	"embed"
 	"html/template"
+	FS "io/fs"
 	"log"
 	"net/http"
 	"time"
@@ -31,12 +33,15 @@ func Logging(next http.Handler) http.Handler {
 	})
 }
 
+//go:embed public
+var fs embed.FS
+
 func New(addr string) (*http.ServeMux, error) {
-	tmplCommand, err := template.ParseFiles("./web/public/command.tmpl")
+	tmplCommand, err := template.ParseFS(fs, "public/command.tmpl")
 	if err != nil {
 		return nil, err
 	}
-	tmplIndex, err := template.ParseFiles("./web/public/index.tmpl")
+	tmplIndex, err := template.ParseFS(fs, "public/index.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +67,9 @@ func New(addr string) (*http.ServeMux, error) {
 			return
 		}
 	})
-	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./web/public/static"))))
+
+	staticFS, _ := FS.Sub(fs, "public/static")
+	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFS)))
 
 	return router, nil
 }

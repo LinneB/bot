@@ -1,13 +1,13 @@
 default: build
 
 build: test
-	go build
+	go build cmd/bot.go
 
 test:
 	go test -v ./...
 
 run: test
-	go run main.go
+	go run cmd/bot.go
 
 fmt:
 	gofmt -s -w -l .
