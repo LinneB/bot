@@ -6,7 +6,6 @@ import (
 	"bot/internal/models"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
