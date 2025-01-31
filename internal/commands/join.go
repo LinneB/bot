@@ -26,7 +26,7 @@ var join = command{
 
 			_, found, err := database.GetChatByName(state.DB, channel)
 			if err != nil {
-				return "", fmt.Errorf("Could not query database: %w", err)
+				return "", fmt.Errorf("Could not get chat: %w", err)
 			}
 			if found {
 				return "Chat is already joined.", nil
@@ -34,7 +34,7 @@ var join = command{
 
 			channelID, found, err := helix.LoginToID(state.Http, channel)
 			if err != nil {
-				return "", fmt.Errorf("Could not get user: %w", err)
+				return "", fmt.Errorf("Could not get user ID: %w", err)
 			}
 			if !found {
 				return fmt.Sprintf("User %s not found.", channel), nil
@@ -61,7 +61,7 @@ var join = command{
 					ChatName: ctx.ChannelName,
 				})
 				if err != nil {
-					return "", fmt.Errorf("Could not delete from database: %w", err)
+					return "", fmt.Errorf("Could not delete chat: %w", err)
 				}
 				return "Parting channel. Until we meet again. :)", nil
 			}

@@ -24,7 +24,7 @@ var live = command{
 					return fmt.Sprintf("User %s not found.", channel), nil
 				}
 			}
-			return "", err
+			return "", fmt.Errorf("Could not get stream: %w", err)
 		}
 		if !found {
 			return fmt.Sprintf("%s is offline.", channel), nil
