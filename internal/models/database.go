@@ -12,6 +12,7 @@ type Subscription struct {
 	SubscriptionID       int    `db:"subscription_id"`
 }
 
+// TODO: ChatID is redundant in this struct, and should be removed
 type Subscriber struct {
 	ChatID             int    `db:"chatid"`
 	SubscriptionID     int    `db:"subscription_id"`

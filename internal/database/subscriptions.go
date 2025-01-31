@@ -81,6 +81,19 @@ func GetSubscription(db *pgxpool.Pool, chatid, channelid int) (models.Subscripti
 	return subscription, true, nil
 }
 
+// Get a single subscription by chat ID and channel name.
+func GetSubscriptionByName(db *pgxpool.Pool, chatid int, channel string) (models.Subscription, bool, error) {
+	rows, _ := db.Query(context.Background(), "SELECT * FROM subscriptions WHERE chatid = $1 AND subscription_username = $2", chatid, channel)
+	subscription, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[models.Subscription])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Subscription{}, false, nil
+		}
+		return models.Subscription{}, false, models.NewDatabaseError(err)
+	}
+	return subscription, true, nil
+}
+
 // Add a subscription to the database.
 func CreateSubscription(db *pgxpool.Pool, sub models.Subscription) error {
 	_, err := db.Exec(
