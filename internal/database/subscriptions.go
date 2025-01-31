@@ -3,6 +3,7 @@ package database
 import (
 	"bot/internal/models"
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -65,4 +66,57 @@ WHERE
 		subscribers[chatname] = append(subscribers[chatname], subscriber)
 	}
 	return subscribers, nil
+}
+
+// Get a single subscription by chat ID and channel ID.
+func GetSubscription(db *pgxpool.Pool, chatid, channelid int) (models.Subscription, bool, error) {
+	rows, _ := db.Query(context.Background(), "SELECT * FROM subscriptions WHERE chatid = $1 AND subscription_userid = $2", chatid, channelid)
+	subscription, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[models.Subscription])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Subscription{}, false, nil
+		}
+		return models.Subscription{}, false, models.NewDatabaseError(err)
+	}
+	return subscription, true, nil
+}
+
+// Add a subscription to the database.
+func CreateSubscription(db *pgxpool.Pool, sub models.Subscription) error {
+	_, err := db.Exec(
+		context.Background(),
+		"INSERT INTO subscriptions (chatid, subscription_username, subscription_userid) VALUES ($1, $2, $3)",
+		sub.ChatID,
+		sub.SubscriptionUsername,
+		sub.SubscriptionUserID,
+	)
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
+}
+
+// Remove a subscription from the database.
+func DeleteSubscription(db *pgxpool.Pool, sub models.Subscription) error {
+	_, err := db.Exec(
+		context.Background(),
+		"DELETE FROM subscriptions WHERE chatid = $1 AND subscription_userid = $2",
+		sub.ChatID,
+		sub.SubscriptionUserID,
+	)
+	if err != nil {
+		return models.NewDatabaseError(err)
+	}
+	return nil
+}
+
+// Check if any chat is subscribed to a channel.
+// This basically checks if there should be an eventsub subscription for the given channel.
+func IsChannelSubscribed(db *pgxpool.Pool, channelid int) (bool, error) {
+	var exists bool
+	err := db.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM subscriptions WHERE subscription_userid = $1)", channelid).Scan(&exists)
+	if err != nil {
+		return false, models.NewDatabaseError(err)
+	}
+	return exists, nil
 }

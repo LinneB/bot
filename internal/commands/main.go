@@ -196,6 +196,7 @@ func init() {
 			help,
 			join,
 			live,
+			notify,
 			ping,
 		},
 		Cooldowns: make(map[int]map[string]time.Time),
