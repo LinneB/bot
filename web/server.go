@@ -23,13 +23,18 @@ func (w *wrappedWriter) WriteHeader(statusCode int) {
 
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := r.RemoteAddr
+		// Replace ip with original ip, in case of proxy
+		if realIP := r.Header.Get("X-Forwarded-For"); realIP != "" {
+			ip = realIP
+		}
 		start := time.Now()
 		wrapped := &wrappedWriter{
 			ResponseWriter: w,
 			statusCode:     http.StatusOK,
 		}
 		next.ServeHTTP(wrapped, r)
-		log.Println(wrapped.statusCode, r.RemoteAddr, r.Method, r.URL.Path, time.Since(start))
+		log.Println(wrapped.statusCode, ip, r.Method, r.URL.Path, time.Since(start))
 	})
 }
 
