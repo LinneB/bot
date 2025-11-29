@@ -58,7 +58,7 @@ func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, e
 	}
 	Arguments := strings.Fields(msg.Message)
 	Invocation := strings.TrimPrefix(Arguments[0], state.Config.Prefix)
-	isMod := msg.Tags["mod"] == "1"
+	isMod := msg.User.IsMod
 	isBroadcaster := SenderUserID == ChannelID
 	isAdmin := slices.Contains(state.Config.Admins, msg.User.Name)
 	role := RGeneric
