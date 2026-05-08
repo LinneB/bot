@@ -10,7 +10,7 @@ services:
     volumes:
       - "./config.toml:/app/config.toml"
   postgres:
-    image: postgres:17-alpine3.20
+    image: postgres:17-alpine3.22
     environment:
       # Remember to update your config.toml if you change the password!
       POSTGRES_USER: root

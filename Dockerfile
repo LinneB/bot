@@ -1,5 +1,5 @@
 # Build
-FROM golang:1.24-alpine3.22 AS build
+FROM golang:1.25.0-alpine3.22 AS build
 WORKDIR /app
 COPY . .
 RUN go build -o /app/bot cmd/bot.go

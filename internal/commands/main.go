@@ -58,14 +58,13 @@ func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, e
 	}
 	Arguments := strings.Fields(msg.Message)
 	Invocation := strings.TrimPrefix(Arguments[0], state.Config.Prefix)
-	isMod := msg.User.IsMod
-	isBroadcaster := SenderUserID == ChannelID
+
 	isAdmin := slices.Contains(state.Config.Admins, msg.User.Name)
 	role := RGeneric
-	if isMod {
+	if msg.User.IsMod {
 		role = RMod
 	}
-	if isBroadcaster {
+	if msg.User.IsBroadcaster {
 		role = RBroadcaster
 	}
 	if isAdmin {
@@ -83,8 +82,8 @@ func NewContext(state *models.State, msg irc.PrivateMessage) (context Context, e
 		Parameters:        Arguments[1:],
 		Command:           strings.ToLower(Arguments[0]),
 		Invocation:        strings.ToLower(Invocation),
-		IsMod:             isMod,
-		IsBroadcaster:     isBroadcaster,
+		IsMod:             msg.User.IsMod,
+		IsBroadcaster:     msg.User.IsBroadcaster,
 		IsAdmin:           isAdmin,
 		Role:              role,
 	}, nil
