@@ -5,6 +5,7 @@ import (
 	"bot/internal/models"
 	"encoding/json"
 	"strconv"
+	"time"
 )
 
 var HelixURL = "https://api.twitch.tv/helix"
@@ -103,17 +104,26 @@ func GetStream(c http.Client, name string) (stream models.HelixStream, found boo
 	}
 }
 
-func ValidateToken(c http.Client) (bool, error) {
+func ValidateToken(c http.Client) (bool, time.Duration, error) {
 	res, err := c.GenericRequest(http.Request{
 		Method: "GET",
 		URL:    "https://id.twitch.tv/oauth2/validate",
 	})
 	if err != nil {
-		return false, err
+		return false, time.Duration(0), err
 	}
 	if res.StatusCode == 200 {
-		return true, nil
+		var responseStruct struct {
+			ExpiresIn int `json:"expires_in"`
+		}
+		err = json.NewDecoder(res.Body).Decode(&responseStruct)
+		if err != nil {
+			// this is an edge case where the token is valid, but the time remaining could not be parsed
+			// in this case it just returns zero
+			return true, time.Duration(0), err
+		}
+		return true, time.Second * time.Duration(responseStruct.ExpiresIn), nil
 	} else {
-		return false, nil
+		return false, time.Duration(0), nil
 	}
 }

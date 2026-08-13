@@ -6,6 +6,7 @@ import (
 	"bot/internal/helix"
 	httpclient "bot/internal/http"
 	"bot/internal/models"
+	"bot/internal/utils"
 	"bot/web"
 	"context"
 	"fmt"
@@ -59,12 +60,14 @@ func main() {
 	}
 
 	log.Println("Validating Helix token")
-	valid, err := helix.ValidateToken(httpClient)
+	valid, expires, err := helix.ValidateToken(httpClient)
 	if err != nil {
 		log.Fatalf("Could not validate Helix token: %s", err)
 	}
 	if !valid {
 		log.Fatalf("Helix token invalid")
+	} else {
+		log.Printf("Helix token valid, expires in %s\n", utils.PrettyDuration(expires))
 	}
 
 	ircClient := irc.NewClient(
