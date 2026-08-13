@@ -34,7 +34,9 @@ func Logging(next http.Handler) http.Handler {
 			statusCode:     http.StatusOK,
 		}
 		next.ServeHTTP(wrapped, r)
-		log.Println(wrapped.statusCode, ip, r.Method, r.URL.Path, time.Since(start))
+		if wrapped.statusCode != 200 {
+			log.Println(wrapped.statusCode, ip, r.Method, r.URL.Path, time.Since(start))
+		}
 	})
 }
 
